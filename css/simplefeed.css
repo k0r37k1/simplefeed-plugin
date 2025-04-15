@@ -1,0 +1,4 @@
+/* SimpleFeed styles – angepasst ans Sky Theme */
+.simplefeed-post { background: #fff; padding: 1em; margin: 1em 0; border-left: 5px solid #3498db; }
+.simplefeed-post h3 { margin-top: 0; }
+.simplefeed-view h1 { color: #3498db; }
