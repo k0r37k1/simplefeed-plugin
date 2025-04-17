@@ -1,10 +1,11 @@
 <?php
 /**
- * SimpleFeed Plugin for WonderCMS
+ * SimpleFeed Plugin für WonderCMS
  * 
- * A minimalist feed plugin with tags and navigation for WonderCMS.
+ * Ein minimalistisches Feed-Plugin mit Tags und Navigation für WonderCMS.
+ * Mit integrierter Markdown-Unterstützung und Sicherheitsfunktionen.
  * 
- * @version 1.0.0
+ * @version 1.1.0
  * @author k0r37k1
  * @license MIT
  */
@@ -43,13 +44,13 @@ try {
         return $args;
     });
 
-    // CSS einbinden
+    // CSS einbinden mit $Wcms->url für korrekte Pfade
     $Wcms->addListener('css', function(array $css) use ($Wcms) {
         $css[] = $Wcms->url('plugins/simplefeed/css/feed.css');
         return $css;
     });
     
-    // JavaScript einbinden
+    // JavaScript einbinden mit $Wcms->url für korrekte Pfade
     $Wcms->addListener('js', function(array $js) use ($Wcms) {
         $js[] = $Wcms->url('plugins/simplefeed/js/simplefeed.js');
         return $js;
@@ -68,7 +69,16 @@ try {
     });
 
 } catch (Exception $e) {
-    // Log error and display friendly message
-    error_log('SimpleFeed Plugin Error: ' . $e->getMessage());
-    echo '<div class="alert alert-danger">SimpleFeed Plugin Error: ' . htmlspecialchars($e->getMessage(), ENT_QUOTES) . '</div>';
+    // Log error with WonderCMS functions and display friendly message
+    if (method_exists($Wcms, 'log')) {
+        $Wcms->log('SimpleFeed Plugin Error: ' . $e->getMessage(), 'danger');
+    } else {
+        error_log('SimpleFeed Plugin Error: ' . $e->getMessage());
+    }
+    
+    if (method_exists($Wcms, 'alert')) {
+        $Wcms->alert('SimpleFeed Plugin Error: ' . $Wcms->stripTags($e->getMessage()), 'danger');
+    } else {
+        echo '<div class="alert alert-danger">SimpleFeed Plugin Error: ' . $Wcms->stripTags($e->getMessage()) . '</div>';
+    }
 }
