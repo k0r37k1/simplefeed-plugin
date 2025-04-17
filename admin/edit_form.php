@@ -1,6 +1,6 @@
 <?php
 defined('INC_ROOT') || die;
-$post = $post ?? ['slug'=>'','title'=>'','date'=>date('Y-m-d'),'short'=>'','image'=>'','author'=>'','content'=>'','tags'=>[]];
+$post = $post ?? ['slug'=>'','title'=>'','date'=>date('Y-m-d'),'short'=>'','image'=>'','author'=>'','content'=>'','tags'=>[], 'use_markdown'=>true];
 ?>
 <h2><?php echo $post['slug'] ? 'Edit' : 'New'; ?> Post</h2>
 <form method="post" class="sf-edit-form" id="postForm">
@@ -44,9 +44,41 @@ $post = $post ?? ['slug'=>'','title'=>'','date'=>date('Y-m-d'),'short'=>'','imag
   </div>
   
   <div class="form-group">
-    <label for="content">Content (HTML allowed):</label>
+    <label for="content">Content:</label>
+    <div class="content-format-toggle">
+      <label>
+        <input type="radio" name="use_markdown" value="1" <?php echo (!isset($post['use_markdown']) || $post['use_markdown']) ? 'checked' : ''; ?>>
+        Markdown
+      </label>
+      <label>
+        <input type="radio" name="use_markdown" value="0" <?php echo (isset($post['use_markdown']) && !$post['use_markdown']) ? 'checked' : ''; ?>>
+        HTML
+      </label>
+    </div>
     <textarea id="content" name="content" rows="15"><?php echo htmlspecialchars($post['content'], ENT_QUOTES); ?></textarea>
-    <div class="help">HTML is allowed for formatting.</div>
+    <div class="help" id="formatHelp">
+      <?php if (!isset($post['use_markdown']) || $post['use_markdown']): ?>
+        <span class="markdown-help">
+          <strong>Markdown formatting:</strong> 
+          **bold**, *italic*, [link](url), # Header, - list item, ```code```
+          <a href="#" id="toggleMarkdownHelp">Show more</a>
+          <div id="markdownHelpExpanded" style="display:none;">
+            <table class="markdown-cheatsheet">
+              <tr><td><strong>Headers</strong></td><td># Title<br>## Subtitle<br>### Section</td></tr>
+              <tr><td><strong>Emphasis</strong></td><td>**bold** or __bold__<br>*italic* or _italic_</td></tr>
+              <tr><td><strong>Lists</strong></td><td>- Item 1<br>- Item 2<br>1. First<br>2. Second</td></tr>
+              <tr><td><strong>Links</strong></td><td>[Link text](http://example.com)</td></tr>
+              <tr><td><strong>Images</strong></td><td>![Alt text](http://example.com/image.jpg)</td></tr>
+              <tr><td><strong>Code</strong></td><td>`inline code`<br>```<br>code block<br>```</td></tr>
+              <tr><td><strong>Quotes</strong></td><td>> This is a quote</td></tr>
+              <tr><td><strong>Horizontal Rule</strong></td><td>---</td></tr>
+            </table>
+          </div>
+        </span>
+      <?php else: ?>
+        <span class="html-help">HTML tags are allowed for formatting.</span>
+      <?php endif; ?>
+    </div>
   </div>
   
   <div class="form-actions">
@@ -57,3 +89,65 @@ $post = $post ?? ['slug'=>'','title'=>'','date'=>date('Y-m-d'),'short'=>'','imag
     <?php endif; ?>
   </div>
 </form>
+
+<script>
+// Extra JavaScript for Markdown support
+document.addEventListener('DOMContentLoaded', function() {
+    // Markdown help toggle
+    const toggleMarkdownHelp = document.getElementById('toggleMarkdownHelp');
+    const markdownHelpExpanded = document.getElementById('markdownHelpExpanded');
+    
+    if (toggleMarkdownHelp && markdownHelpExpanded) {
+        toggleMarkdownHelp.addEventListener('click', function(e) {
+            e.preventDefault();
+            const isVisible = markdownHelpExpanded.style.display !== 'none';
+            markdownHelpExpanded.style.display = isVisible ? 'none' : 'block';
+            toggleMarkdownHelp.textContent = isVisible ? 'Show more' : 'Show less';
+        });
+    }
+    
+    // Switch between Markdown and HTML help text
+    const markdownRadios = document.querySelectorAll('input[name="use_markdown"]');
+    const formatHelp = document.getElementById('formatHelp');
+    const markdownHelpHtml = `
+        <span class="markdown-help">
+          <strong>Markdown formatting:</strong> 
+          **bold**, *italic*, [link](url), # Header, - list item, \`\`\`code\`\`\`
+          <a href="#" id="toggleMarkdownHelp">Show more</a>
+          <div id="markdownHelpExpanded" style="display:none;">
+            <table class="markdown-cheatsheet">
+              <tr><td><strong>Headers</strong></td><td># Title<br>## Subtitle<br>### Section</td></tr>
+              <tr><td><strong>Emphasis</strong></td><td>**bold** or __bold__<br>*italic* or _italic_</td></tr>
+              <tr><td><strong>Lists</strong></td><td>- Item 1<br>- Item 2<br>1. First<br>2. Second</td></tr>
+              <tr><td><strong>Links</strong></td><td>[Link text](http://example.com)</td></tr>
+              <tr><td><strong>Images</strong></td><td>![Alt text](http://example.com/image.jpg)</td></tr>
+              <tr><td><strong>Code</strong></td><td>\`inline code\`<br>\`\`\`<br>code block<br>\`\`\`</td></tr>
+              <tr><td><strong>Quotes</strong></td><td>> This is a quote</td></tr>
+              <tr><td><strong>Horizontal Rule</strong></td><td>---</td></tr>
+            </table>
+          </div>
+        </span>
+    `;
+    const htmlHelpHtml = `<span class="html-help">HTML tags are allowed for formatting.</span>`;
+    
+    if (markdownRadios.length && formatHelp) {
+        markdownRadios.forEach(radio => {
+            radio.addEventListener('change', function() {
+                formatHelp.innerHTML = this.value === '1' ? markdownHelpHtml : htmlHelpHtml;
+                
+                // Reattach event listener to new toggle element
+                const newToggle = document.getElementById('toggleMarkdownHelp');
+                const newExpanded = document.getElementById('markdownHelpExpanded');
+                if (newToggle && newExpanded) {
+                    newToggle.addEventListener('click', function(e) {
+                        e.preventDefault();
+                        const isVisible = newExpanded.style.display !== 'none';
+                        newExpanded.style.display = isVisible ? 'none' : 'block';
+                        newToggle.textContent = isVisible ? 'Show more' : 'Show less';
+                    });
+                }
+            });
+        });
+    }
+});
+</script>
