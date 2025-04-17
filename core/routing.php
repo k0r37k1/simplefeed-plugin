@@ -1,234 +1,198 @@
 <?php
 defined('INC_ROOT') || die;
 
-// Ensure we have settings and helper functions
-require_once __DIR__ . '/settings.php';
-require_once __DIR__ . '/helpers.php';
-
-// Start session for CSRF protection
-if (session_status() !== PHP_SESSION_ACTIVE) {
+// Start session if not already started
+if (session_status() === PHP_SESSION_NONE) {
     session_start();
 }
 
-// Process admin actions
-if (isset($_GET['page']) && $_GET['page'] === 'simplefeed') {
-    // Admin authentication check (assuming WonderCMS handles authentication)
-    if (!isset($Wcms) || !$Wcms->loggedIn) {
-        echo '<div class="alert alert-danger">You need to be logged in to access admin features.</div>';
-        return;
-    }
+// Sanitize GET parameters
+$page = isset($_GET['page']) ? filter_var($_GET['page'], FILTER_SANITIZE_FULL_SPECIAL_CHARS) : '';
+$action = isset($_GET['action']) ? filter_var($_GET['action'], FILTER_SANITIZE_FULL_SPECIAL_CHARS) : '';
+$slug = isset($_GET['slug']) ? filter_var($_GET['slug'], FILTER_SANITIZE_FULL_SPECIAL_CHARS) : '';
+$tag = isset($_GET['tag']) ? filter_var($_GET['tag'], FILTER_SANITIZE_FULL_SPECIAL_CHARS) : '';
+$shown = isset($_GET['shown']) ? filter_var($_GET['shown'], FILTER_VALIDATE_INT) : null;
+$confirm = isset($_GET['confirm']) ? filter_var($_GET['confirm'], FILTER_VALIDATE_INT) : 0;
+
+// Settings speichern
+if ($_SERVER['REQUEST_METHOD'] === 'POST' 
+    && $page === 'simplefeed'
+    && $action === 'settings'
+    && isset($_POST['sf_csrf_token'], $_POST['date_format'])) {
     
-    // Save settings
-    if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['date_format'], $_POST['csrf_token'])) {
-        // Verify CSRF token
-        if (!sf_verifyCSRFToken($_POST['csrf_token'] ?? '')) {
-            echo '<div class="alert alert-danger">Invalid security token. Please try again.</div>';
-        } else {
-            $cfg = [
-                'date_format' => trim($_POST['date_format']),
-                'show_more_limit' => max(1, (int)$_POST['show_more_limit']),
-                'use_thumbnails' => ($_POST['use_thumbnails'] == '1')
-            ];
-            
-            $dataDir = __DIR__ . '/../data';
-            if (!is_dir($dataDir)) {
-                mkdir($dataDir, 0755, true);
-            }
-            
-            $result = file_put_contents(__DIR__ . '/../data/settings.json', 
-                json_encode($cfg, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE));
-                
-            if ($result !== false) {
-                echo '<div class="alert alert-success">Settings saved successfully.</div>';
-            } else {
-                echo '<div class="alert alert-danger">Failed to save settings. Check permissions.</div>';
-            }
-        }
-    }
-    
-    // Save post data
-    if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['title'], $_POST['csrf_token'])) {
-        // Verify CSRF token
-        if (!sf_verifyCSRFToken($_POST['csrf_token'] ?? '')) {
-            $errors = ['Invalid security token. Please try again.'];
-            include __DIR__ . '/../admin/edit_form.php';
-            return;
-        }
-        
-        $originalSlug = $_POST['original_slug'] ?? '';
-        
-        // Prepare post data
-        $postData = [
-            'slug' => $originalSlug, // Preserve original slug for edits
-            'title' => $_POST['title'],
-            'date' => $_POST['date'],
-            'short' => $_POST['short'],
-            'image' => $_POST['image'],
-            'author' => $_POST['author'],
-            'content' => sf_sanitizeHTML($_POST['content']), // Sanitize HTML content
-            'tags' => $_POST['tags']
+    // CSRF check
+    if (!sf_validateCSRFToken($_POST['sf_csrf_token'])) {
+        echo "<div class='error'>Security check failed. Please try again.</div>";
+    } else {
+        $cfg = [
+            'date_format' => filter_var(trim($_POST['date_format']), FILTER_SANITIZE_FULL_SPECIAL_CHARS),
+            'show_more_limit' => filter_var($_POST['show_more_limit'], FILTER_VALIDATE_INT, ['options' => ['min_range' => 1, 'default' => 4]]),
+            'use_thumbnails' => (filter_var($_POST['use_thumbnails'], FILTER_VALIDATE_INT) === 1)
         ];
         
-        // Save post and handle result
-        $result = sf_savePost($postData);
-        
-        if (empty($result['errors'])) {
-            // Success - redirect to list
-            header('Location: ?page=simplefeed&list=1&success=1');
-            exit;
+        if (sf_safeWriteFile(__DIR__.'/../data/settings.json', $cfg)) {
+            echo "<div class='success'>Einstellungen gespeichert.</div>";
         } else {
-            // Show form with errors
-            $post = $result['post'];
-            $errors = $result['errors'];
-            include __DIR__ . '/../admin/edit_form.php';
-            return;
+            echo "<div class='error'>Fehler beim Speichern der Einstellungen.</div>";
         }
     }
-    
-    // Route to appropriate view based on GET parameters
-    
-    // Default admin panel
-    if (!isset($_GET['list'], $_GET['edit'], $_GET['delete'], $_GET['view'], 
-               $_GET['archive'], $_GET['tag'])) {
-        include __DIR__ . '/../admin/panel.php';
-        return;
-    }
-    
-    // List view
-    if (isset($_GET['list'])) {
-        // Show success message if redirected from save operation
-        if (isset($_GET['success'])) {
-            echo '<div class="alert alert-success">Post saved successfully.</div>';
-        }
+}
+
+// Handle routes
+switch ($action) {
+    case 'list':
+        // List View
+        include __DIR__.'/../admin/list_view.php';
+        break;
         
-        include __DIR__ . '/../admin/list_view.php';
-        return;
-    }
-    
-    // Edit form display
-    if (isset($_GET['edit']) && $_SERVER['REQUEST_METHOD'] === 'GET') {
-        $slug = $_GET['edit'];
-        
-        // Security: validate slug format
-        if (!preg_match('/^[a-z0-9-]+$/', $slug)) {
-            echo '<div class="alert alert-danger">Invalid post identifier.</div>';
-            include __DIR__ . '/../admin/list_view.php';
-            return;
-        }
-        
-        $file = __DIR__ . '/../data/' . $slug . '.json';
-        
-        if (file_exists($file)) {
-            $content = file_get_contents($file);
-            $post = json_decode($content, true);
+    case 'edit':
+        // Edit Form
+        if ($_SERVER['REQUEST_METHOD'] === 'GET' && !empty($slug)) {
+            $file = __DIR__.'/../data/'.basename($slug).'.json';
+            $post = [];
             
-            if (!$post) {
-                echo '<div class="alert alert-danger">Invalid post data.</div>';
-                include __DIR__ . '/../admin/list_view.php';
-                return;
+            if (file_exists($file)) {
+                $post = sf_safeReadFile($file, true);
             }
-        }
-        
-        include __DIR__ . '/../admin/edit_form.php';
-        return;
-    }
-    
-    // Delete post
-    if (isset($_GET['delete'])) {
-        $slug = $_GET['delete'];
-        
-        // Security: validate slug format
-        if (!preg_match('/^[a-z0-9-]+$/', $slug)) {
-            echo '<div class="alert alert-danger">Invalid post identifier.</div>';
-            include __DIR__ . '/../admin/list_view.php';
-            return;
-        }
-        
-        // Confirmation step
-        if (!isset($_GET['confirm'])) {
-            $csrf = sf_getCSRFToken();
-            echo '<div class="alert alert-warning">';
-            echo 'Are you sure you want to delete <strong>' . htmlspecialchars($slug, ENT_QUOTES) . '</strong>? ';
-            echo '<a href="?page=simplefeed&delete=' . urlencode($slug) . 
-                 '&confirm=1&csrf_token=' . urlencode($csrf) . '">Yes</a> | ';
-            echo '<a href="?page=simplefeed&list=1">No</a>';
-            echo '</div>';
-            include __DIR__ . '/../admin/list_view.php';
-            return;
-        }
-        
-        // CSRF verification for deletion
-        if (!sf_verifyCSRFToken($_GET['csrf_token'] ?? '')) {
-            echo '<div class="alert alert-danger">Invalid security token. Please try again.</div>';
-            include __DIR__ . '/../admin/list_view.php';
-            return;
-        }
-        
-        // Perform deletion
-        if (sf_deletePost($slug)) {
-            echo '<div class="alert alert-success">Post deleted successfully.</div>';
-        } else {
-            echo '<div class="alert alert-danger">Failed to delete post.</div>';
-        }
-        
-        include __DIR__ . '/../admin/list_view.php';
-        return;
-    }
-    
-    // Frontend views
-    $config = sf_getConfig();
-    $posts = sf_loadPosts();
-    
-    // Single post view
-    if (isset($_GET['view'])) {
-        $slug = $_GET['view'];
-        
-        // Security: validate slug format
-        if (!preg_match('/^[a-z0-9-]+$/', $slug)) {
-            echo '<div class="alert alert-danger">Invalid post identifier.</div>';
-            include __DIR__ . '/../templates/feed_list.php';
-            return;
-        }
-        
-        // Find the requested post
-        $post = null;
-        foreach ($posts as $p) {
-            if ($p['slug'] == $slug) {
-                $post = $p;
+            
+            include __DIR__.'/../admin/edit_form.php';
+        } 
+        // Save Post
+        elseif ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['title'], $_POST['sf_csrf_token'])) {
+            if (!sf_validateCSRFToken($_POST['sf_csrf_token'])) {
+                echo "<div class='error'>Security check failed. Please try again.</div>";
+                include __DIR__.'/../admin/edit_form.php';
                 break;
             }
+            
+            // Sanitize input
+            $postData = [
+                'title' => filter_var($_POST['title'], FILTER_SANITIZE_FULL_SPECIAL_CHARS),
+                'date' => filter_var($_POST['date'], FILTER_SANITIZE_FULL_SPECIAL_CHARS),
+                'short' => filter_var($_POST['short'], FILTER_SANITIZE_FULL_SPECIAL_CHARS),
+                'image' => filter_var($_POST['image'], FILTER_SANITIZE_URL),
+                'author' => filter_var($_POST['author'], FILTER_SANITIZE_FULL_SPECIAL_CHARS),
+                'content' => sf_sanitizeHTML($_POST['content']),
+                'tags' => array_filter(array_map('trim', explode(',', $_POST['tags'])))
+            ];
+            
+            // Validate
+            $errors = sf_validatePost($postData);
+            if (!empty($errors)) {
+                echo "<div class='error'><strong>Please correct the following errors:</strong><ul>";
+                foreach ($errors as $error) {
+                    echo "<li>".htmlspecialchars($error, ENT_QUOTES)."</li>";
+                }
+                echo "</ul></div>";
+                $post = $postData;
+                include __DIR__.'/../admin/edit_form.php';
+                break;
+            }
+            
+            // Determine slug
+            if (!empty($_POST['original_slug'])) {
+                // Editing existing post - keep original slug
+                $slug = filter_var($_POST['original_slug'], FILTER_SANITIZE_FULL_SPECIAL_CHARS);
+            } else {
+                // New post - generate slug from title
+                $slug = sf_generateSlug($postData['title']);
+            }
+            
+            $postData['slug'] = $slug;
+            
+            // Save the file
+            $file = __DIR__.'/../data/'.basename($slug).'.json';
+            if (sf_safeWriteFile($file, $postData)) {
+                echo "<div class='success'>Post saved successfully.</div>";
+                header('Location: ?page=simplefeed&action=list');
+                exit;
+            } else {
+                echo "<div class='error'>Error saving post.</div>";
+                $post = $postData;
+                include __DIR__.'/../admin/edit_form.php';
+            }
+        } else {
+            // New post form
+            include __DIR__.'/../admin/edit_form.php';
         }
+        break;
         
-        if (!$post) {
-            echo '<div class="alert alert-danger">Post not found.</div>';
-            include __DIR__ . '/../templates/feed_list.php';
-            return;
+    case 'delete':
+        // Delete Post
+        if (!empty($slug)) {
+            $file = __DIR__.'/../data/'.basename($slug).'.json';
+            
+            if (!$confirm) {
+                echo "<div class='confirm-delete'>
+                      <p>Are you sure you want to delete: <strong>".htmlspecialchars($slug, ENT_QUOTES)."</strong>?</p>
+                      <a href='?page=simplefeed&action=delete&slug=".urlencode($slug)."&confirm=1&sf_csrf_token=".sf_generateCSRFToken()."' class='btn-delete'>Yes, delete</a>
+                      <a href='?page=simplefeed&action=list' class='btn-cancel'>Cancel</a>
+                      </div>";
+            } else {
+                // CSRF check
+                if (!sf_validateCSRFToken($_GET['sf_csrf_token'] ?? '')) {
+                    echo "<div class='error'>Security check failed. Please try again.</div>";
+                } else if (file_exists($file)) {
+                    if (unlink($file)) {
+                        echo "<div class='success'>Post deleted successfully.</div>";
+                        header('Location: ?page=simplefeed&action=list');
+                        exit;
+                    } else {
+                        echo "<div class='error'>Error deleting post.</div>";
+                    }
+                }
+            }
         }
+        break;
         
-        include __DIR__ . '/../templates/feed_view.php';
-        return;
-    }
-    
-    // Archive view
-    if (isset($_GET['archive'])) {
-        include __DIR__ . '/../templates/feed_archive.php';
-        return;
-    }
-    
-    // Tag filter view
-    if (isset($_GET['tag'])) {
-        $tag = $_GET['tag'];
-        
-        // Security: validate tag format 
-        if (!preg_match('/^[a-zA-Z0-9 _-]+$/', $tag)) {
-            echo '<div class="alert alert-danger">Invalid tag format.</div>';
-            $tag = null;
+    case 'view':
+        // View Single Post
+        if (!empty($slug)) {
+            $config = sf_getConfig();
+            $posts = sf_loadPosts();
+            $post = null;
+            
+            foreach ($posts as $p) {
+                if ($p['slug'] === $slug) {
+                    $post = $p;
+                    break;
+                }
+            }
+            
+            if ($post) {
+                include __DIR__.'/../templates/feed_view.php';
+            } else {
+                echo "<div class='error'>Post not found.</div>";
+                include __DIR__.'/../templates/feed_list.php';
+            }
         }
+        break;
         
-        include __DIR__ . '/../templates/feed_list.php';
-        return;
-    }
-    
-    // Default to list view if no specific route matched
-    include __DIR__ . '/../templates/feed_list.php';
+    case 'archive':
+        // Archive View
+        include __DIR__.'/../templates/feed_archive.php';
+        break;
+        
+    case 'tag':
+        // Tag Filter
+        include __DIR__.'/../templates/feed_list.php';
+        break;
+        
+    default:
+        // Default view (settings or feed)
+        if (isset($_GET['list'])) {
+            include __DIR__.'/../admin/list_view.php';
+        } else {
+            $isAdmin = $page === 'simplefeed' && !isset($_GET['view'], $_GET['archive'], $_GET['tag']);
+            
+            if ($isAdmin) {
+                include __DIR__.'/../admin/panel.php';
+            } else {
+                // Frontend laden
+                $config = sf_getConfig();
+                $posts = sf_loadPosts();
+                include __DIR__.'/../templates/feed_list.php';
+            }
+        }
+        break;
 }
