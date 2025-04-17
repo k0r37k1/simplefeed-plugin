@@ -4,7 +4,7 @@ global $Wcms;
 
 // Make sure user is logged in as admin
 if (!$Wcms->loggedIn) {
-    echo "<div class='error'>Access denied. Please log in as administrator.</div>";
+    $Wcms->alert('Access denied. Please log in as administrator.', 'danger');
     return;
 }
 
@@ -39,16 +39,16 @@ $config = sf_getConfig();
           <tr>
             <td>
               <a href="?page=simplefeed&action=view&slug=<?php echo urlencode($p['slug']); ?>" target="_blank">
-                <?php echo htmlspecialchars($p['title'], ENT_QUOTES); ?>
+                <?php echo $Wcms->stripTags($p['title']); ?>
               </a>
             </td>
             <td><?php echo date($config['date_format'], strtotime($p['date'])); ?></td>
-            <td><?php echo htmlspecialchars($p['author'] ?? '', ENT_QUOTES); ?></td>
+            <td><?php echo $Wcms->stripTags($p['author'] ?? ''); ?></td>
             <td>
               <?php if (!empty($p['tags'])): ?>
                 <div class="tag-list">
                   <?php foreach ($p['tags'] as $tag): ?>
-                    <span class="tag"><?php echo htmlspecialchars($tag, ENT_QUOTES); ?></span>
+                    <span class="tag"><?php echo $Wcms->stripTags($tag); ?></span>
                   <?php endforeach; ?>
                 </div>
               <?php endif; ?>
