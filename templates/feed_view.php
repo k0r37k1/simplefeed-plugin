@@ -2,7 +2,18 @@
 require_once __DIR__ . '/../core/settings.php';
 require_once __DIR__ . '/../core/helpers.php';
 $config = sf_getConfig();
-$posts = sf_loadPosts();
+
+// Make sure $post is defined
+if (!isset($post) || !is_array($post)) {
+    echo "<div class='error'>Post not found</div>";
+    return;
+}
+
+// Find previous and next posts
+$posts = $posts ?? sf_loadPosts();
+$prev = null;
+$next = null;
+
 foreach ($posts as $i => $p) {
     if ($p['slug'] === $post['slug']) {
         $prev = $posts[$i+1] ?? null;
@@ -11,20 +22,73 @@ foreach ($posts as $i => $p) {
     }
 }
 ?>
-<h2><?php echo htmlspecialchars($post['title'], ENT_QUOTES); ?></h2>
-<small><?php echo htmlspecialchars($post['author'], ENT_QUOTES); ?> – 
-<?php echo date($config['date_format'], strtotime($post['date'])); ?></small>
-<?php if ($post['image']): ?>
-    <div class="thumbnail"><img src="<?php echo htmlspecialchars($post['image'], ENT_QUOTES); ?>" loading="lazy"></div>
-<?php endif; ?>
-<div><?php echo $post['content']; ?></div>
-<p>
-<?php if ($prev): ?>
-    <a href="?page=simplefeed&view=<?php echo htmlspecialchars($prev['slug'], ENT_QUOTES); ?>">← 
-    <?php echo htmlspecialchars($prev['title'], ENT_QUOTES); ?></a>
-<?php endif; ?>
-<?php if ($next): ?>
-    <a style="float:right" href="?page=simplefeed&view=<?php echo htmlspecialchars($next['slug'], ENT_QUOTES); ?>">
-    <?php echo htmlspecialchars($next['title'], ENT_QUOTES); ?> →</a>
-<?php endif; ?>
-</p>
+
+<article class="sf-post-full">
+    <header class="sf-post-header">
+        <h2><?php echo htmlspecialchars($post['title'], ENT_QUOTES); ?></h2>
+        
+        <div class="sf-post-meta">
+            <?php if (!empty($post['author'])): ?>
+                <span class="sf-post-author">
+                    By <?php echo htmlspecialchars($post['author'], ENT_QUOTES); ?>
+                </span>
+            <?php endif; ?>
+            
+            <span class="sf-post-date">
+                Published on <?php echo date($config['date_format'], strtotime($post['date'])); ?>
+            </span>
+            
+            <?php if (!empty($post['tags'])): ?>
+                <div class="sf-post-tags">
+                    Tags: 
+                    <?php foreach ($post['tags'] as $tag): ?>
+                        <a href="?page=simplefeed&action=tag&tag=<?php echo urlencode($tag); ?>" class="sf-tag">
+                            <?php echo htmlspecialchars($tag, ENT_QUOTES); ?>
+                        </a>
+                    <?php endforeach; ?>
+                </div>
+            <?php endif; ?>
+        </div>
+    </header>
+    
+    <?php if (!empty($post['image'])): ?>
+        <div class="sf-post-image">
+            <img src="<?php echo htmlspecialchars($post['image'], ENT_QUOTES); ?>" 
+                 alt="<?php echo htmlspecialchars($post['title'], ENT_QUOTES); ?>" 
+                 loading="lazy">
+        </div>
+    <?php endif; ?>
+    
+    <div class="sf-post-content">
+        <?php 
+        // Use sanitized content to prevent XSS
+        echo sf_sanitizeHTML($post['content'] ?? ''); 
+        ?>
+    </div>
+    
+    <footer class="sf-post-footer">
+        <div class="sf-post-navigation">
+            <?php if ($prev): ?>
+                <div class="sf-post-prev">
+                    <a href="?page=simplefeed&action=view&slug=<?php echo urlencode($prev['slug']); ?>">
+                        <span class="nav-arrow">←</span> 
+                        <span class="nav-title"><?php echo htmlspecialchars($prev['title'], ENT_QUOTES); ?></span>
+                    </a>
+                </div>
+            <?php endif; ?>
+            
+            <?php if ($next): ?>
+                <div class="sf-post-next">
+                    <a href="?page=simplefeed&action=view&slug=<?php echo urlencode($next['slug']); ?>">
+                        <span class="nav-title"><?php echo htmlspecialchars($next['title'], ENT_QUOTES); ?></span>
+                        <span class="nav-arrow">→</span>
+                    </a>
+                </div>
+            <?php endif; ?>
+        </div>
+        
+        <div class="sf-back-to-feed">
+            <a href="?page=simplefeed">Back to Feed</a>
+        </div>
+    </footer>
+</article>
