@@ -61,10 +61,17 @@ foreach ($posts as $i => $p) {
     
     <div class="sf-post-content">
         <?php 
-        // Use sanitized content to prevent XSS
-        echo sf_sanitizeHTML($post['content'] ?? ''); 
+        // Verwende content_html, der bereits in routing.php je nach Markdown-Einstellung
+        // entweder über Parsedown oder über sf_sanitizeHTML geleitet wurde
+        echo isset($post['content_html']) ? $post['content_html'] : sf_sanitizeHTML($post['content']); 
         ?>
     </div>
+    
+    <?php if (isset($post['use_markdown']) && $post['use_markdown']): ?>
+        <div class="sf-post-format">
+            <span class="sf-post-format-badge">Markdown</span>
+        </div>
+    <?php endif; ?>
     
     <footer class="sf-post-footer">
         <div class="sf-post-navigation">
