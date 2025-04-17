@@ -1,12 +1,14 @@
 <?php
 require_once __DIR__ . '/../core/settings.php';
 require_once __DIR__ . '/../core/helpers.php';
+global $Wcms;
+
 $config = sf_getConfig();
 $posts = sf_loadPosts();
 
-// Get and sanitize parameters
-$shown = isset($_GET['shown']) ? filter_var($_GET['shown'], FILTER_VALIDATE_INT, ['options' => ['min_range' => 1, 'default' => $config['show_more_limit']]]) : $config['show_more_limit'];
-$tag = isset($_GET['tag']) ? filter_var($_GET['tag'], FILTER_SANITIZE_FULL_SPECIAL_CHARS) : null;
+// Get and sanitize parameters using WonderCMS functions
+$shown = isset($_GET['shown']) ? (int)$_GET['shown'] : $config['show_more_limit'];
+$tag = isset($_GET['tag']) ? $Wcms->stripTags($_GET['tag']) : null;
 
 // Filter posts by tag if needed
 $filtered = isset($tag) 
@@ -17,7 +19,7 @@ $filtered = isset($tag)
 <div class="sf-feed-container">
     <?php if (isset($tag)): ?>
         <div class="sf-tag-filter">
-            <h3>Posts tagged with: <span class="tag-name"><?php echo htmlspecialchars($tag, ENT_QUOTES); ?></span></h3>
+            <h3>Posts tagged with: <span class="tag-name"><?php echo $Wcms->stripTags($tag); ?></span></h3>
             <a href="?page=simplefeed" class="clear-filter">Clear filter</a>
         </div>
     <?php endif; ?>
@@ -25,7 +27,7 @@ $filtered = isset($tag)
     <?php if (empty($filtered)): ?>
         <div class="sf-empty-feed">
             <?php if (isset($tag)): ?>
-                <p>No posts found with the tag: <?php echo htmlspecialchars($tag, ENT_QUOTES); ?></p>
+                <p>No posts found with the tag: <?php echo $Wcms->stripTags($tag); ?></p>
             <?php else: ?>
                 <p>No posts found. Check back later for new content.</p>
             <?php endif; ?>
@@ -37,13 +39,13 @@ $filtered = isset($tag)
                     <header class="sf-post-header">
                         <h3 class="sf-post-title">
                             <a href="?page=simplefeed&action=view&slug=<?php echo urlencode($post['slug']); ?>">
-                                <?php echo htmlspecialchars($post['title'], ENT_QUOTES); ?>
+                                <?php echo $Wcms->stripTags($post['title']); ?>
                             </a>
                         </h3>
                         
                         <div class="sf-post-meta">
                             <?php if (!empty($post['author'])): ?>
-                                <span class="sf-post-author"><?php echo htmlspecialchars($post['author'], ENT_QUOTES); ?></span>
+                                <span class="sf-post-author"><?php echo $Wcms->stripTags($post['author']); ?></span>
                             <?php endif; ?>
                             
                             <span class="sf-post-date">
@@ -55,8 +57,8 @@ $filtered = isset($tag)
                     <?php if ($config['use_thumbnails'] && !empty($post['image'])): ?>
                         <div class="sf-post-thumbnail">
                             <a href="?page=simplefeed&action=view&slug=<?php echo urlencode($post['slug']); ?>">
-                                <img src="<?php echo htmlspecialchars($post['image'], ENT_QUOTES); ?>" 
-                                     alt="<?php echo htmlspecialchars($post['title'], ENT_QUOTES); ?>" 
+                                <img src="<?php echo $Wcms->stripTags($post['image']); ?>" 
+                                     alt="<?php echo $Wcms->stripTags($post['title']); ?>" 
                                      loading="lazy">
                             </a>
                         </div>
@@ -64,7 +66,7 @@ $filtered = isset($tag)
                     
                     <?php if (!empty($post['short'])): ?>
                         <div class="sf-post-excerpt">
-                            <?php echo htmlspecialchars($post['short'], ENT_QUOTES); ?>
+                            <?php echo $Wcms->stripTags($post['short']); ?>
                         </div>
                     <?php endif; ?>
                     
@@ -73,7 +75,7 @@ $filtered = isset($tag)
                             <div class="sf-post-tags">
                                 <?php foreach ($post['tags'] as $t): ?>
                                     <a href="?page=simplefeed&action=tag&tag=<?php echo urlencode($t); ?>" class="sf-tag">
-                                        <?php echo htmlspecialchars($t, ENT_QUOTES); ?>
+                                        <?php echo $Wcms->stripTags($t); ?>
                                     </a>
                                 <?php endforeach; ?>
                             </div>
