@@ -14,7 +14,7 @@ $config = sf_getConfig();
   <h2>SimpleFeed Settings</h2>
   
   <form method="post" action="?page=simplefeed&action=settings">
-    <!-- Use WonderCMS token instead of our custom one -->
+    <!-- Use WonderCMS token -->
     <input type="hidden" name="token" value="<?php echo $Wcms->getToken(); ?>">
     
     <div class="form-group">
@@ -60,7 +60,7 @@ $config = sf_getConfig();
   
   <div class="markdown-info">
     <h3>Markdown Support</h3>
-    <p>SimpleFeed now supports Markdown formatting for your posts. You can enable or disable Markdown individually for each post when editing.</p>
+    <p>SimpleFeed supports Markdown formatting for your posts. You can enable or disable Markdown individually for each post when editing.</p>
     <p>Benefits of using Markdown:</p>
     <ul>
       <li>Simpler and cleaner syntax compared to HTML</li>
