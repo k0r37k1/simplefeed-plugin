@@ -1,0 +1,4 @@
+/* SimpleFeed Styling */
+.simplefeed-post { margin-bottom: 20px; }
+.simplefeed-post h3 { margin: 0; }
+.thumbnail img { max-width: 100%; height: auto; }
