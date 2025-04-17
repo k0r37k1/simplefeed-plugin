@@ -4,10 +4,12 @@ defined('INC_ROOT') || die;
 // Füge Markdown-Funktionalität hinzu
 require_once __DIR__ . '/markdown.php';
 
-// Start session if not already started
-if (session_status() === PHP_SESSION_NONE) {
-    session_start();
-}
+// Get WonderCMS global instance
+global $Wcms;
+
+// Check if user is logged in as admin for all admin actions
+$isAdmin = $Wcms->loggedIn;
+$adminActions = ['list', 'edit', 'delete', 'settings'];
 
 // Sanitize GET parameters
 $page = isset($_GET['page']) ? filter_var($_GET['page'], FILTER_SANITIZE_FULL_SPECIAL_CHARS) : '';
@@ -17,14 +19,20 @@ $tag = isset($_GET['tag']) ? filter_var($_GET['tag'], FILTER_SANITIZE_FULL_SPECI
 $shown = isset($_GET['shown']) ? filter_var($_GET['shown'], FILTER_VALIDATE_INT) : null;
 $confirm = isset($_GET['confirm']) ? filter_var($_GET['confirm'], FILTER_VALIDATE_INT) : 0;
 
+// Verify admin access for restricted actions
+if (in_array($action, $adminActions) && !$isAdmin) {
+    echo "<div class='error'>Access denied. Please log in as administrator.</div>";
+    return;
+}
+
 // Settings speichern
 if ($_SERVER['REQUEST_METHOD'] === 'POST' 
     && $page === 'simplefeed'
     && $action === 'settings'
-    && isset($_POST['sf_csrf_token'], $_POST['date_format'])) {
+    && isset($_POST['token'])) {
     
-    // CSRF check
-    if (!sf_validateCSRFToken($_POST['sf_csrf_token'])) {
+    // Use WonderCMS token verification instead of our own
+    if (!$Wcms->verifyFormToken('token')) {
         echo "<div class='error'>Security check failed. Please try again.</div>";
     } else {
         $cfg = [
@@ -45,12 +53,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST'
 // Handle routes
 switch ($action) {
     case 'list':
-        // List View
+        // Admin only: List View
         include __DIR__.'/../admin/list_view.php';
         break;
         
     case 'edit':
-        // Edit Form
+        // Admin only: Edit Form
         if ($_SERVER['REQUEST_METHOD'] === 'GET' && !empty($slug)) {
             $file = __DIR__.'/../data/'.basename($slug).'.json';
             $post = [];
@@ -70,9 +78,10 @@ switch ($action) {
             
             include __DIR__.'/../admin/edit_form.php';
         } 
-        // Save Post
-        elseif ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['title'], $_POST['sf_csrf_token'])) {
-            if (!sf_validateCSRFToken($_POST['sf_csrf_token'])) {
+        // Admin only: Save Post
+        elseif ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['title'], $_POST['token'])) {
+            // Use WonderCMS token verification
+            if (!$Wcms->verifyFormToken('token')) {
                 echo "<div class='error'>Security check failed. Please try again.</div>";
                 include __DIR__.'/../admin/edit_form.php';
                 break;
@@ -149,19 +158,19 @@ switch ($action) {
         break;
         
     case 'delete':
-        // Delete Post
+        // Admin only: Delete Post
         if (!empty($slug)) {
             $file = __DIR__.'/../data/'.basename($slug).'.json';
             
             if (!$confirm) {
                 echo "<div class='confirm-delete'>
                       <p>Are you sure you want to delete: <strong>".htmlspecialchars($slug, ENT_QUOTES)."</strong>?</p>
-                      <a href='?page=simplefeed&action=delete&slug=".urlencode($slug)."&confirm=1&sf_csrf_token=".sf_generateCSRFToken()."' class='btn-delete'>Yes, delete</a>
+                      <a href='?page=simplefeed&action=delete&slug=".urlencode($slug)."&confirm=1&token=".$Wcms->getToken()."' class='btn-delete'>Yes, delete</a>
                       <a href='?page=simplefeed&action=list' class='btn-cancel'>Cancel</a>
                       </div>";
             } else {
-                // CSRF check
-                if (!sf_validateCSRFToken($_GET['sf_csrf_token'] ?? '')) {
+                // Use WonderCMS token verification
+                if (!isset($_GET['token']) || !$Wcms->verifyToken($_GET['token'])) {
                     echo "<div class='error'>Security check failed. Please try again.</div>";
                 } else if (file_exists($file)) {
                     if (unlink($file)) {
@@ -177,7 +186,7 @@ switch ($action) {
         break;
         
     case 'view':
-        // View Single Post
+        // View Single Post (public)
         if (!empty($slug)) {
             $config = sf_getConfig();
             $posts = sf_loadPosts();
@@ -208,41 +217,35 @@ switch ($action) {
         break;
         
     case 'archive':
-        // Archive View
+        // Archive View (public)
         include __DIR__.'/../templates/feed_archive.php';
         break;
         
     case 'tag':
-        // Tag Filter
+        // Tag Filter (public)
         include __DIR__.'/../templates/feed_list.php';
         break;
         
     default:
-        // Default view (settings or feed)
-        if (isset($_GET['list'])) {
-            include __DIR__.'/../admin/list_view.php';
+        // Default view (settings for admin or feed for public)
+        if ($isAdmin && !isset($_GET['view'], $_GET['archive'], $_GET['tag'])) {
+            include __DIR__.'/../admin/panel.php';
         } else {
-            $isAdmin = $page === 'simplefeed' && !isset($_GET['view'], $_GET['archive'], $_GET['tag']);
+            // Frontend laden (public)
+            $config = sf_getConfig();
+            $posts = sf_loadPosts();
             
-            if ($isAdmin) {
-                include __DIR__.'/../admin/panel.php';
-            } else {
-                // Frontend laden
-                $config = sf_getConfig();
-                $posts = sf_loadPosts();
-                
-                // Markdown zu HTML konvertieren
-                foreach ($posts as &$post) {
-                    if (isset($post['use_markdown']) && $post['use_markdown']) {
-                        $post['content_html'] = sf_parseMarkdown($post['content']);
-                    } else {
-                        // HTML wurde bereits beim Speichern gesäubert
-                        $post['content_html'] = $post['content'];
-                    }
+            // Markdown zu HTML konvertieren
+            foreach ($posts as &$post) {
+                if (isset($post['use_markdown']) && $post['use_markdown']) {
+                    $post['content_html'] = sf_parseMarkdown($post['content']);
+                } else {
+                    // HTML wurde bereits beim Speichern gesäubert
+                    $post['content_html'] = $post['content'];
                 }
-                
-                include __DIR__.'/../templates/feed_list.php';
             }
+            
+            include __DIR__.'/../templates/feed_list.php';
         }
         break;
 }
