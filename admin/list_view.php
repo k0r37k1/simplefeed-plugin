@@ -1,5 +1,13 @@
 <?php
 defined('INC_ROOT') || die;
+global $Wcms;
+
+// Make sure user is logged in as admin
+if (!$Wcms->loggedIn) {
+    echo "<div class='error'>Access denied. Please log in as administrator.</div>";
+    return;
+}
+
 require_once __DIR__ . '/../core/helpers.php';
 $posts = sf_loadPosts();
 $config = sf_getConfig();
