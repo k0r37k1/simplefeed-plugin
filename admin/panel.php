@@ -4,7 +4,7 @@ global $Wcms;
 
 // Make sure user is logged in as admin
 if (!$Wcms->loggedIn) {
-    echo "<div class='error'>Access denied. Please log in as administrator.</div>";
+    $Wcms->alert('Access denied. Please log in as administrator.', 'danger');
     return;
 }
 
@@ -19,7 +19,7 @@ $config = sf_getConfig();
     
     <div class="form-group">
       <label for="date_format">Date Format:</label>
-      <input type="text" id="date_format" name="date_format" value="<?php echo htmlspecialchars($config['date_format'], ENT_QUOTES); ?>">
+      <input type="text" id="date_format" name="date_format" value="<?php echo $Wcms->stripTags($config['date_format']); ?>">
       <div class="help">PHP date format, e.g., d.m.Y for 31.12.2025</div>
     </div>
     
