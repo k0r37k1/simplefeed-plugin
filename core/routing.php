@@ -1,7 +1,7 @@
 <?php
 defined('INC_ROOT') || die;
 
-// Füge Markdown-Funktionalität hinzu
+// Add Markdown functionality
 require_once __DIR__ . '/markdown.php';
 
 // Get WonderCMS global instance
@@ -25,7 +25,7 @@ if (in_array($action, $adminActions) && !$isAdmin) {
     return;
 }
 
-// Settings speichern
+// Save Settings
 if ($_SERVER['REQUEST_METHOD'] === 'POST' 
     && $page === 'simplefeed'
     && $action === 'settings'
@@ -73,7 +73,7 @@ switch ($action) {
                     $post['use_markdown'] = $config['default_markdown'] ?? true;
                 }
             } else {
-                // Für neuen Post: Default-Wert für Markdown aus den Einstellungen holen
+                // For new post: Default value for Markdown from settings
                 $config = sf_getConfig();
                 $post['use_markdown'] = $config['default_markdown'] ?? true;
             }
@@ -96,10 +96,8 @@ switch ($action) {
                 'short' => $Wcms->stripTags($_POST['short']),
                 'image' => $Wcms->stripTags($_POST['image']),
                 'author' => $Wcms->stripTags($_POST['author']),
-                'content' => $_POST['content'], // Content wird später je nach Markdown/HTML-Einstellung verarbeitet
-                'tags' => array_filter(array_map(function($tag) use ($Wcms) { 
-                    return $Wcms->stripTags(trim($tag)); 
-                }, explode(',', $_POST['tags']))),
+                'content' => $_POST['content'], // Content will be processed based on Markdown setting
+                'tags' => array_filter(array_map([$Wcms, 'stripTags'], array_map('trim', explode(',', $_POST['tags'])))),
                 'use_markdown' => (isset($_POST['use_markdown']) && $_POST['use_markdown'] == '1')
             ];
             
@@ -118,7 +116,7 @@ switch ($action) {
                 break;
             }
             
-            // Wenn Markdown nicht verwendet wird, dann HTML-Content bereinigen
+            // If not using Markdown, purify HTML content
             if (!$postData['use_markdown']) {
                 $postData['content'] = $Wcms->purify($postData['content']);
             }
@@ -140,9 +138,15 @@ switch ($action) {
                 $Wcms->alert('Post saved successfully.', 'success');
                 $Wcms->log('SimpleFeed: Post saved - ' . $slug, 'info');
                 
-                // Redirect to post list
-                echo '<script>window.location.href="?page=simplefeed&action=list";</script>';
-                exit;
+                // Redirect properly using header() if headers not sent
+                if (!headers_sent()) {
+                    header('Location: ?page=simplefeed&action=list');
+                    exit;
+                } else {
+                    // Fallback to JavaScript redirect
+                    echo '<script>window.location.href="?page=simplefeed&action=list";</script>';
+                    exit;
+                }
             } else {
                 $Wcms->alert('Error saving post.', 'danger');
                 $Wcms->log('SimpleFeed: Failed to save post - ' . $slug, 'danger');
@@ -174,8 +178,7 @@ switch ($action) {
             $file = __DIR__.'/../data/'.basename($slug).'.json';
             
             if (!$confirm) {
-                // Die Verwendung von $Wcms->alert würde den Confirm-Button überlagern,
-                // daher verwenden wir hier spezielle HTML-Ausgabe
+                // Using custom HTML for confirmation dialog to avoid overlay issues
                 echo "<div class='confirm-delete'>";
                 echo "<p>Are you sure you want to delete: <strong>" . $Wcms->stripTags($slug) . "</strong>?</p>";
                 echo "<a href='?page=simplefeed&action=delete&slug=" . urlencode($slug) . "&confirm=1&token=" . $Wcms->getToken() . "' class='btn-delete'>Yes, delete</a> ";
@@ -186,16 +189,30 @@ switch ($action) {
                 if (!isset($_GET['token']) || !$Wcms->verifyToken($_GET['token'])) {
                     $Wcms->alert('Security check failed. Please try again.', 'danger');
                 } else if (file_exists($file)) {
-                    if (unlink($file)) {
-                        $Wcms->alert('Post deleted successfully.', 'success');
-                        $Wcms->log('SimpleFeed: Post deleted - ' . $slug, 'info');
-                        
-                        // Redirect to post list
-                        echo '<script>window.location.href="?page=simplefeed&action=list";</script>';
-                        exit;
+                    // Verify file is within the data directory (prevent path traversal)
+                    $dataPath = realpath(__DIR__ . '/../data');
+                    $realFile = realpath($file);
+                    
+                    if ($realFile && strpos($realFile, $dataPath) === 0) {
+                        if (unlink($file)) {
+                            $Wcms->alert('Post deleted successfully.', 'success');
+                            $Wcms->log('SimpleFeed: Post deleted - ' . $slug, 'info');
+                            
+                            // Redirect properly
+                            if (!headers_sent()) {
+                                header('Location: ?page=simplefeed&action=list');
+                                exit;
+                            } else {
+                                echo '<script>window.location.href="?page=simplefeed&action=list";</script>';
+                                exit;
+                            }
+                        } else {
+                            $Wcms->alert('Error deleting post.', 'danger');
+                            $Wcms->log('SimpleFeed: Failed to delete post - ' . $slug, 'danger');
+                        }
                     } else {
-                        $Wcms->alert('Error deleting post.', 'danger');
-                        $Wcms->log('SimpleFeed: Failed to delete post - ' . $slug, 'danger');
+                        $Wcms->alert('Security error: Invalid file path.', 'danger');
+                        $Wcms->log('SimpleFeed: Security warning - attempted to delete file outside data directory', 'danger');
                     }
                 }
             }
@@ -217,11 +234,11 @@ switch ($action) {
             }
             
             if ($post) {
-                // Konvertiere Markdown zu HTML falls nötig
+                // Convert Markdown to HTML if needed
                 if (isset($post['use_markdown']) && $post['use_markdown']) {
                     $post['content_html'] = sf_parseMarkdown($post['content']);
                 } else {
-                    // HTML wurde bereits beim Speichern gereinigt mit $Wcms->purify()
+                    // HTML was already cleaned when saving
                     $post['content_html'] = $post['content'];
                 }
                 
@@ -248,16 +265,16 @@ switch ($action) {
         if ($isAdmin && !isset($_GET['view'], $_GET['archive'], $_GET['tag'])) {
             include __DIR__.'/../admin/panel.php';
         } else {
-            // Frontend laden (public)
+            // Load frontend
             $config = sf_getConfig();
             $posts = sf_loadPosts();
             
-            // Markdown zu HTML konvertieren
+            // Convert Markdown to HTML
             foreach ($posts as &$post) {
                 if (isset($post['use_markdown']) && $post['use_markdown']) {
                     $post['content_html'] = sf_parseMarkdown($post['content']);
                 } else {
-                    // HTML wurde bereits beim Speichern gereinigt
+                    // HTML was already cleaned when saving
                     $post['content_html'] = $post['content'];
                 }
             }
