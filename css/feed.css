@@ -362,6 +362,133 @@
     margin-top: 30px;
 }
 
+/* ------ Single Post Styles ------ */
+.sf-post-full {
+    max-width: 800px;
+    margin: 0 auto;
+}
+
+.sf-post-image {
+    margin: 20px 0;
+}
+
+.sf-post-image img {
+    max-width: 100%;
+    height: auto;
+    border-radius: 4px;
+}
+
+.sf-post-content {
+    line-height: 1.6;
+    margin-bottom: 30px;
+}
+
+/* Markdown Content Styling */
+.sf-post-content h1,
+.sf-post-content h2,
+.sf-post-content h3,
+.sf-post-content h4,
+.sf-post-content h5,
+.sf-post-content h6 {
+    margin-top: 1.5em;
+    margin-bottom: 0.75em;
+}
+
+.sf-post-content h1 {
+    font-size: 2em;
+}
+
+.sf-post-content h2 {
+    font-size: 1.75em;
+}
+
+.sf-post-content h3 {
+    font-size: 1.5em;
+}
+
+.sf-post-content h4 {
+    font-size: 1.25em;
+}
+
+.sf-post-content p {
+    margin-bottom: 1.2em;
+}
+
+.sf-post-content ul,
+.sf-post-content ol {
+    margin-bottom: 1.2em;
+    padding-left: 2em;
+}
+
+.sf-post-content blockquote {
+    border-left: 4px solid #ddd;
+    padding-left: 1em;
+    margin-left: 0;
+    color: #555;
+    font-style: italic;
+}
+
+.sf-post-content pre {
+    background: #f5f5f5;
+    padding: 1em;
+    border-radius: 4px;
+    overflow-x: auto;
+}
+
+.sf-post-content code {
+    background: #f5f5f5;
+    padding: 0.2em 0.4em;
+    border-radius: 3px;
+    font-family: monospace;
+}
+
+.sf-post-content pre code {
+    padding: 0;
+    background: none;
+}
+
+.sf-post-content img {
+    max-width: 100%;
+    height: auto;
+}
+
+.sf-post-content table {
+    border-collapse: collapse;
+    width: 100%;
+    margin-bottom: 1.2em;
+}
+
+.sf-post-content th,
+.sf-post-content td {
+    border: 1px solid #ddd;
+    padding: 8px;
+}
+
+.sf-post-content th {
+    background-color: #f5f5f5;
+    text-align: left;
+}
+
+.sf-post-format {
+    margin-top: 20px;
+    text-align: right;
+}
+
+.sf-post-format-badge {
+    display: inline-block;
+    padding: 3px 8px;
+    background-color: #f0f0f0;
+    border-radius: 16px;
+    font-size: 12px;
+    color: #555;
+}
+
+.sf-post-footer {
+    margin-top: 30px;
+    padding-top: 20px;
+    border-top: 1px solid #eee;
+}
+
 /* ------ Archive Styles ------ */
 .sf-archive-container {
     max-width: 800px;
