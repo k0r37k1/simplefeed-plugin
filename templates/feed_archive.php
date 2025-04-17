@@ -1,6 +1,8 @@
 <?php
 require_once __DIR__ . '/../core/settings.php';
 require_once __DIR__ . '/../core/helpers.php';
+global $Wcms;
+
 $config = sf_getConfig();
 $posts = sf_loadPosts();
 
@@ -39,14 +41,14 @@ krsort($postsByYear);
                                 </span>
                                 
                                 <a href="?page=simplefeed&action=view&slug=<?php echo urlencode($post['slug']); ?>" class="sf-archive-title">
-                                    <?php echo htmlspecialchars($post['title'], ENT_QUOTES); ?>
+                                    <?php echo $Wcms->stripTags($post['title']); ?>
                                 </a>
                                 
                                 <?php if (!empty($post['tags'])): ?>
                                     <span class="sf-archive-tags">
                                         <?php foreach ($post['tags'] as $tag): ?>
                                             <a href="?page=simplefeed&action=tag&tag=<?php echo urlencode($tag); ?>" class="sf-tag sf-tag-small">
-                                                <?php echo htmlspecialchars($tag, ENT_QUOTES); ?>
+                                                <?php echo $Wcms->stripTags($tag); ?>
                                             </a>
                                         <?php endforeach; ?>
                                     </span>
