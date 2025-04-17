@@ -4,7 +4,7 @@ global $Wcms;
 
 // Make sure user is logged in as admin
 if (!$Wcms->loggedIn) {
-    echo "<div class='error'>Access denied. Please log in as administrator.</div>";
+    $Wcms->alert('Access denied. Please log in as administrator.', 'danger');
     return;
 }
 
@@ -14,41 +14,41 @@ $post = $post ?? ['slug'=>'','title'=>'','date'=>date('Y-m-d'),'short'=>'','imag
 <form method="post" class="sf-edit-form" id="postForm">
   <!-- Use WonderCMS token instead of our custom one -->
   <input type="hidden" name="token" value="<?php echo $Wcms->getToken(); ?>">
-  <input type="hidden" name="original_slug" value="<?php echo htmlspecialchars($post['slug'], ENT_QUOTES); ?>">
+  <input type="hidden" name="original_slug" value="<?php echo $Wcms->stripTags($post['slug']); ?>">
   
   <div class="form-group">
     <label for="title">Title:<span class="required">*</span></label>
-    <input id="title" name="title" value="<?php echo htmlspecialchars($post['title'], ENT_QUOTES); ?>" required>
+    <input id="title" name="title" value="<?php echo $Wcms->stripTags($post['title']); ?>" required>
     <div class="help">The title of your post.</div>
   </div>
   
   <div class="form-group">
     <label for="date">Date:<span class="required">*</span></label>
-    <input type="date" id="date" name="date" value="<?php echo htmlspecialchars($post['date'], ENT_QUOTES); ?>" required>
+    <input type="date" id="date" name="date" value="<?php echo $Wcms->stripTags($post['date']); ?>" required>
     <div class="help">Publication date in YYYY-MM-DD format.</div>
   </div>
   
   <div class="form-group">
     <label for="short">Short Preview:</label>
-    <textarea id="short" name="short" rows="3"><?php echo htmlspecialchars($post['short'], ENT_QUOTES); ?></textarea>
+    <textarea id="short" name="short" rows="3"><?php echo $Wcms->stripTags($post['short']); ?></textarea>
     <div class="help">A short preview text shown in the feed list.</div>
   </div>
   
   <div class="form-group">
     <label for="image">Image URL:</label>
-    <input id="image" name="image" value="<?php echo htmlspecialchars($post['image'], ENT_QUOTES); ?>">
+    <input id="image" name="image" value="<?php echo $Wcms->stripTags($post['image']); ?>">
     <div class="help">URL to an image (optional).</div>
   </div>
   
   <div class="form-group">
     <label for="tags">Tags (comma separated):</label>
-    <input id="tags" name="tags" value="<?php echo htmlspecialchars(implode(',', $post['tags']), ENT_QUOTES); ?>">
+    <input id="tags" name="tags" value="<?php echo $Wcms->stripTags(implode(',', $post['tags'])); ?>">
     <div class="help">Enter tags separated by commas, e.g., news,update,important</div>
   </div>
   
   <div class="form-group">
     <label for="author">Author:</label>
-    <input id="author" name="author" value="<?php echo htmlspecialchars($post['author'], ENT_QUOTES); ?>">
+    <input id="author" name="author" value="<?php echo $Wcms->stripTags($post['author']); ?>">
     <div class="help">The author's name.</div>
   </div>
   
@@ -64,7 +64,7 @@ $post = $post ?? ['slug'=>'','title'=>'','date'=>date('Y-m-d'),'short'=>'','imag
         HTML
       </label>
     </div>
-    <textarea id="content" name="content" rows="15"><?php echo htmlspecialchars($post['content'], ENT_QUOTES); ?></textarea>
+    <textarea id="content" name="content" rows="15"><?php echo $Wcms->stripTags($post['content'], false); ?></textarea>
     <div class="help" id="formatHelp">
       <?php if (!isset($post['use_markdown']) || $post['use_markdown']): ?>
         <span class="markdown-help">
