@@ -2,53 +2,87 @@
 defined('INC_ROOT') || die;
 
 /**
- * Markdown-Parser-Integration für SimpleFeed
+ * Markdown Parser Integration for SimpleFeed
  */
+global $Wcms;
 
-// Parsedown-Bibliothek laden, falls noch nicht geschehen
-if (!class_exists('Parsedown')) {
-    require_once __DIR__ . '/../lib/Parsedown.php';
+/**
+ * Load Parsedown library if needed
+ */
+function sf_loadParsedown() {
+    global $Wcms;
+    
+    if (!class_exists('Parsedown')) {
+        $parsedownPath = __DIR__ . '/../lib/Parsedown.php';
+        
+        if (file_exists($parsedownPath)) {
+            require_once $parsedownPath;
+        } else {
+            if (method_exists($Wcms, 'log')) {
+                $Wcms->log('SimpleFeed: Parsedown library not found', 'danger');
+            }
+            return false;
+        }
+    }
+    
+    return true;
 }
 
 /**
- * Konvertiert Markdown zu HTML mit Parsedown
+ * Convert Markdown to HTML using Parsedown
  * 
- * @param string $markdown Der Markdown-Text
- * @return string Das generierte HTML
+ * @param string $markdown The Markdown text
+ * @return string The generated HTML
  */
 function sf_parseMarkdown(string $markdown): string {
+    global $Wcms;
+    
+    if (!sf_loadParsedown()) {
+        if (method_exists($Wcms, 'log')) {
+            $Wcms->log('SimpleFeed: Failed to parse Markdown - Parsedown library not available', 'warning');
+        }
+        return $Wcms->purify($markdown); // Fallback to just purifying the input
+    }
+    
     static $parser = null;
     
-    // Singleton-Pattern für Parsedown-Instanz
+    // Singleton pattern for Parsedown instance
     if ($parser === null) {
         $parser = new Parsedown();
-        // Sicherer Modus, um XSS zu verhindern
+        // Safe mode to prevent XSS
         if (method_exists($parser, 'setSafeMode')) {
             $parser->setSafeMode(true);
         }
     }
     
-    return $parser->text($markdown);
+    $html = $parser->text($markdown);
+    
+    // Additional purification using WonderCMS if needed
+    if (method_exists($Wcms, 'purify')) {
+        $html = $Wcms->purify($html);
+    }
+    
+    return $html;
 }
 
 /**
- * Prüft, ob der Text Markdown enthält
+ * Check if text contains Markdown
  * 
- * @param string $text Der zu prüfende Text
- * @return bool True, wenn der Text Markdown-Strukturen enthält
+ * @param string $text The text to check
+ * @return bool True if the text contains Markdown structures
  */
 function sf_isMarkdown(string $text): bool {
-    // Prüfen auf typische Markdown-Strukturen
+    // Check for typical Markdown structures
     return (
         // Headers
         preg_match('/^#{1,6}\s/m', $text) ||
-        // Listen
+        // Lists
         preg_match('/^-\s/m', $text) ||
         preg_match('/^\*\s/m', $text) ||
         preg_match('/^\d+\.\s/m', $text) ||
         // Blockquotes
         preg_match('/^>\s/m', $text) ||
-        // Code-Blöcke
+        // Code blocks
         preg_match('/^```/m', $text) ||
         // Links
         preg_match('/\[.+?\]\(.+?\)/', $text) ||
@@ -59,14 +93,16 @@ function sf_isMarkdown(string $text): bool {
 }
 
 /**
- * Detektiert automatisch, ob der Inhalt Markdown ist und konvertiert entsprechend
+ * Auto-detect whether content is Markdown and convert accordingly
  * 
- * @param string $content Der Textinhalt
- * @param bool $isMarkdown Optional: Explizit als Markdown behandeln
- * @return string Konvertierter Inhalt
+ * @param string $content The text content
+ * @param bool $isMarkdown Optional: Explicitly treat as Markdown
+ * @return string Converted content
  */
 function sf_processContent(string $content, bool $isMarkdown = null): string {
-    // Wenn $isMarkdown nicht angegeben wurde, automatisch erkennen
+    global $Wcms;
+    
+    // Auto-detect if not specified
     if ($isMarkdown === null) {
         $isMarkdown = sf_isMarkdown($content);
     }
@@ -74,7 +110,13 @@ function sf_processContent(string $content, bool $isMarkdown = null): string {
     if ($isMarkdown) {
         return sf_parseMarkdown($content);
     } else {
-        // Wenn kein Markdown, dann als HTML behandeln - trotzdem sanitizen
-        return sf_sanitizeHTML($content);
+        // If not Markdown, treat as HTML but still sanitize
+        if (method_exists($Wcms, 'purify')) {
+            return $Wcms->purify($content);
+        } else {
+            // Fallback to basic sanitization
+            $allowed_tags = '<p><br><h1><h2><h3><h4><h5><h6><ul><ol><li><a><strong><em><blockquote><pre><code><img><table><tr><td><th>';
+            return strip_tags($content, $allowed_tags);
+        }
     }
 }
