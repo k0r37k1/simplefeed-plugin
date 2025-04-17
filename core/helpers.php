@@ -2,35 +2,51 @@
 defined('INC_ROOT') || die;
 
 /**
- * Generates URL-friendly slug from title.
- * Improved to better handle non-Latin characters and special cases.
+ * Erzeugt URL‑freundlichen Slug aus Titel.
+ * Unterstützt auch nicht-lateinische Zeichen durch Transliteration.
  */
 function sf_generateSlug(string $title): string {
-    // Transliterate non-latin characters to closest ASCII equivalent
-    $slug = transliterator_transliterate('Any-Latin; Latin-ASCII', $title);
+    // Transliterate non-latin characters
+    $slug = transliterateName($title);
     $slug = strtolower(trim($slug));
     $slug = preg_replace('/[^a-z0-9-]+/', '-', $slug);
-    $slug = trim($slug, '-');
-    
-    // Ensure we have a valid slug, even with unusual inputs
-    return !empty($slug) ? $slug : 'post-' . substr(md5($title . time()), 0, 8);
+    return trim($slug, '-');
 }
 
 /**
- * Loads all posts from data/*.json, sorted by date.
+ * Transliterate non-latin characters to latin equivalents
+ */
+function transliterateName($str) {
+    $transliterationTable = [
+        'ä' => 'ae', 'ö' => 'oe', 'ü' => 'ue', 'ß' => 'ss',
+        'Ä' => 'Ae', 'Ö' => 'Oe', 'Ü' => 'Ue',
+        'á' => 'a', 'à' => 'a', 'â' => 'a', 'ã' => 'a', 'å' => 'a',
+        'é' => 'e', 'è' => 'e', 'ê' => 'e', 'ë' => 'e',
+        'í' => 'i', 'ì' => 'i', 'î' => 'i', 'ï' => 'i',
+        'ó' => 'o', 'ò' => 'o', 'ô' => 'o', 'õ' => 'o',
+        'ú' => 'u', 'ù' => 'u', 'û' => 'u', 'ç' => 'c'
+    ];
+    
+    return str_replace(array_keys($transliterationTable), array_values($transliterationTable), $str);
+}
+
+/**
+ * Lädt alle Posts aus data/*.json, sortiert nach Datum.
  */
 function sf_loadPosts(): array {
     $dataPath = __DIR__ . '/../data';
+    
     if (!is_dir($dataPath)) {
         mkdir($dataPath, 0755, true);
         return [];
     }
     
     $files = glob($dataPath . '/*.json');
+    if (!$files) return [];
+    
     $posts = [];
     foreach ($files as $f) {
-        // Only load files that match our pattern and are valid json
-        if (!preg_match('/\/([a-z0-9-]+)\.json$/', $f)) continue;
+        if (basename($f) === 'settings.json') continue;
         
         $content = @file_get_contents($f);
         if (!$content) continue;
@@ -51,123 +67,85 @@ function sf_loadPosts(): array {
 function sf_validatePost(array $post): array {
     $errors = [];
     
-    // Required fields
     if (empty($post['title'])) {
         $errors[] = 'Title is required';
     }
     
-    // Date validation
-    if (empty($post['date']) || !strtotime($post['date'])) {
-        $errors[] = 'Valid date is required';
+    if (empty($post['date']) || !preg_match('/^\d{4}-\d{2}-\d{2}$/', $post['date'])) {
+        $errors[] = 'Valid date (YYYY-MM-DD) is required';
     }
     
-    // Make sure all expected fields exist
-    $post = array_merge([
-        'slug' => '',
-        'title' => '',
-        'date' => date('Y-m-d'),
-        'short' => '',
-        'image' => '',
-        'author' => '',
-        'content' => '',
-        'tags' => []
-    ], $post);
-    
-    return ['post' => $post, 'errors' => $errors];
+    return $errors;
 }
 
 /**
- * Generates a CSRF token for form protection
+ * Sanitizes HTML content
  */
-function sf_getCSRFToken(): string {
-    if (session_status() !== PHP_SESSION_ACTIVE) {
-        session_start();
-    }
-    
-    if (empty($_SESSION['sf_csrf_token'])) {
+function sf_sanitizeHTML(string $html): string {
+    // Basic sanitization - a more comprehensive solution would use
+    // a proper HTML Purifier library
+    $allowed_tags = '<p><br><h1><h2><h3><h4><h5><h6><ul><ol><li><a><strong><em><blockquote><pre><code><img><table><tr><td><th>';
+    return strip_tags($html, $allowed_tags);
+}
+
+/**
+ * Generate CSRF token
+ */
+function sf_generateCSRFToken(): string {
+    if (!isset($_SESSION['sf_csrf_token'])) {
         $_SESSION['sf_csrf_token'] = bin2hex(random_bytes(32));
     }
-    
     return $_SESSION['sf_csrf_token'];
 }
 
 /**
- * Verifies a CSRF token from a form submission
+ * Validate CSRF token
  */
-function sf_verifyCSRFToken(string $token): bool {
-    if (session_status() !== PHP_SESSION_ACTIVE) {
-        session_start();
-    }
-    
-    $validToken = $_SESSION['sf_csrf_token'] ?? '';
-    
-    // Use constant time comparison to prevent timing attacks
-    return !empty($validToken) && hash_equals($validToken, $token);
-}
-
-/**
- * Sanitizes content for safe output in HTML contexts
- */
-function sf_sanitizeHTML(string $content): string {
-    // Basic sanitization - for production, consider using a proper HTML purifier library
-    $allowed_tags = '<p><br><b><i><u><strong><em><h1><h2><h3><h4><h5><h6><ul><ol><li><a><img><blockquote><pre><code>';
-    return strip_tags($content, $allowed_tags);
-}
-
-/**
- * Securely saves a post file with proper validations
- */
-function sf_savePost(array $postData): array {
-    // Validate post data
-    $result = sf_validatePost($postData);
-    if (!empty($result['errors'])) {
-        return $result;
-    }
-    
-    $post = $result['post'];
-    
-    // For new posts, generate slug from title
-    if (empty($post['slug'])) {
-        $post['slug'] = sf_generateSlug($post['title']);
-    }
-    
-    // Sanitize tags: remove empty tags, trim each tag
-    $post['tags'] = array_filter(array_map('trim', is_array($post['tags']) ? $post['tags'] : 
-        explode(',', $post['tags'] ?? '')));
-    
-    // Prepare data directory
-    $dataPath = __DIR__ . '/../data';
-    if (!is_dir($dataPath)) {
-        if (!mkdir($dataPath, 0755, true)) {
-            return ['post' => $post, 'errors' => ['Could not create data directory']];
-        }
-    }
-    
-    // Save the post
-    $filePath = $dataPath . '/' . $post['slug'] . '.json';
-    $success = file_put_contents($filePath, json_encode($post, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE));
-    
-    if ($success === false) {
-        return ['post' => $post, 'errors' => ['Failed to save post file']];
-    }
-    
-    return ['post' => $post, 'errors' => []];
-}
-
-/**
- * Safely deletes a post file
- */
-function sf_deletePost(string $slug): bool {
-    // Validate slug format for security
-    if (!preg_match('/^[a-z0-9-]+$/', $slug)) {
+function sf_validateCSRFToken(?string $token): bool {
+    if (empty($_SESSION['sf_csrf_token']) || empty($token)) {
         return false;
     }
     
-    $filePath = __DIR__ . '/../data/' . $slug . '.json';
-    
-    if (file_exists($filePath) && is_file($filePath)) {
-        return unlink($filePath);
+    return hash_equals($_SESSION['sf_csrf_token'], $token);
+}
+
+/**
+ * Safe file read with error handling
+ */
+function sf_safeReadFile(string $path, bool $json = false) {
+    if (!file_exists($path)) {
+        return $json ? [] : '';
     }
     
-    return false;
+    $content = @file_get_contents($path);
+    if ($content === false) {
+        return $json ? [] : '';
+    }
+    
+    if ($json) {
+        $data = json_decode($content, true);
+        return is_array($data) ? $data : [];
+    }
+    
+    return $content;
+}
+
+/**
+ * Safe file write with error handling
+ */
+function sf_safeWriteFile(string $path, $data): bool {
+    $dir = dirname($path);
+    if (!is_dir($dir)) {
+        if (!@mkdir($dir, 0755, true)) {
+            return false;
+        }
+    }
+    
+    if (is_array($data)) {
+        $content = json_encode($data, JSON_PRETTY_PRINT);
+    } else {
+        $content = (string)$data;
+    }
+    
+    return @file_put_contents($path, $content) !== false;
 }
