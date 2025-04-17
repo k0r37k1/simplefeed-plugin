@@ -11,17 +11,6 @@
 defined('INC_ROOT') || die;
 global $Wcms;
 
-// Ensure session is started
-if (session_status() === PHP_SESSION_NONE) {
-    session_start();
-}
-
-// Check if WonderCMS functions are available
-if (!function_exists('tools\inc')) {
-    echo '<div class="error">SimpleFeed Plugin Error: WonderCMS core functions not available</div>';
-    return;
-}
-
 try {
     // Core-Funktionen einbinden
     tools\inc(__DIR__ . '/core/settings.php');
@@ -39,9 +28,19 @@ try {
     }
 
     // Menü-Eintrag hinzufügen
-    $Wcms->addListener('menu', function(array $menu) {
+    $Wcms->addListener('menu', function(array $menu) use ($Wcms) {
+        // Öffentlich sichtbar - ohne Login erforderlich
         $menu[] = ['slug' => 'simplefeed', 'name' => 'SimpleFeed'];
         return $menu;
+    });
+
+    // Admin-Menü-Eintrag hinzufügen, wenn angemeldet
+    $Wcms->addListener('adminPanel', function(array $args) use ($Wcms) {
+        // Nur wenn Admin angemeldet ist
+        if ($Wcms->loggedIn) {
+            $args[0] .= '<a href="' . $Wcms->url('?page=simplefeed') . '" class="btn btn-info marginTop5">SimpleFeed</a>';
+        }
+        return $args;
     });
 
     // CSS einbinden
@@ -57,7 +56,7 @@ try {
     });
 
     // Page-Listener für Routing aller simplefeed‑Seiten
-    $Wcms->addListener('page', function(array $page) {
+    $Wcms->addListener('page', function(array $page) use ($Wcms) {
         $pg = $_GET['page'] ?? '';
         if ($pg !== 'simplefeed') return $page;
 
@@ -71,5 +70,5 @@ try {
 } catch (Exception $e) {
     // Log error and display friendly message
     error_log('SimpleFeed Plugin Error: ' . $e->getMessage());
-    echo '<div class="error">SimpleFeed Plugin Error: ' . htmlspecialchars($e->getMessage(), ENT_QUOTES) . '</div>';
+    echo '<div class="alert alert-danger">SimpleFeed Plugin Error: ' . htmlspecialchars($e->getMessage(), ENT_QUOTES) . '</div>';
 }
