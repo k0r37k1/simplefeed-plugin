@@ -12,16 +12,16 @@ $isAdmin = $Wcms->loggedIn;
 $adminActions = ['list', 'edit', 'delete', 'settings'];
 
 // Sanitize GET parameters
-$page = isset($_GET['page']) ? filter_var($_GET['page'], FILTER_SANITIZE_FULL_SPECIAL_CHARS) : '';
-$action = isset($_GET['action']) ? filter_var($_GET['action'], FILTER_SANITIZE_FULL_SPECIAL_CHARS) : '';
-$slug = isset($_GET['slug']) ? filter_var($_GET['slug'], FILTER_SANITIZE_FULL_SPECIAL_CHARS) : '';
-$tag = isset($_GET['tag']) ? filter_var($_GET['tag'], FILTER_SANITIZE_FULL_SPECIAL_CHARS) : '';
-$shown = isset($_GET['shown']) ? filter_var($_GET['shown'], FILTER_VALIDATE_INT) : null;
-$confirm = isset($_GET['confirm']) ? filter_var($_GET['confirm'], FILTER_VALIDATE_INT) : 0;
+$page = isset($_GET['page']) ? $Wcms->stripTags($_GET['page']) : '';
+$action = isset($_GET['action']) ? $Wcms->stripTags($_GET['action']) : '';
+$slug = isset($_GET['slug']) ? $Wcms->stripTags($_GET['slug']) : '';
+$tag = isset($_GET['tag']) ? $Wcms->stripTags($_GET['tag']) : '';
+$shown = isset($_GET['shown']) ? (int)$_GET['shown'] : null;
+$confirm = isset($_GET['confirm']) ? (int)$_GET['confirm'] : 0;
 
 // Verify admin access for restricted actions
 if (in_array($action, $adminActions) && !$isAdmin) {
-    echo "<div class='error'>Access denied. Please log in as administrator.</div>";
+    $Wcms->alert('Access denied. Please log in as administrator.', 'danger');
     return;
 }
 
@@ -31,21 +31,23 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST'
     && $action === 'settings'
     && isset($_POST['token'])) {
     
-    // Use WonderCMS token verification instead of our own
+    // Use WonderCMS token verification
     if (!$Wcms->verifyFormToken('token')) {
-        echo "<div class='error'>Security check failed. Please try again.</div>";
+        $Wcms->alert('Security check failed. Please try again.', 'danger');
     } else {
         $cfg = [
-            'date_format' => filter_var(trim($_POST['date_format']), FILTER_SANITIZE_FULL_SPECIAL_CHARS),
-            'show_more_limit' => filter_var($_POST['show_more_limit'], FILTER_VALIDATE_INT, ['options' => ['min_range' => 1, 'default' => 4]]),
-            'use_thumbnails' => (filter_var($_POST['use_thumbnails'], FILTER_VALIDATE_INT) === 1),
-            'default_markdown' => isset($_POST['default_markdown']) ? (filter_var($_POST['default_markdown'], FILTER_VALIDATE_INT) === 1) : true
+            'date_format' => $Wcms->stripTags(trim($_POST['date_format'])),
+            'show_more_limit' => (int)$_POST['show_more_limit'],
+            'use_thumbnails' => (int)$_POST['use_thumbnails'] === 1,
+            'default_markdown' => isset($_POST['default_markdown']) ? ((int)$_POST['default_markdown'] === 1) : true
         ];
         
         if (sf_safeWriteFile(__DIR__.'/../data/settings.json', $cfg)) {
-            echo "<div class='success'>Einstellungen gespeichert.</div>";
+            $Wcms->alert('Settings saved successfully.', 'success');
+            $Wcms->log('SimpleFeed: Settings updated', 'info');
         } else {
-            echo "<div class='error'>Fehler beim Speichern der Einstellungen.</div>";
+            $Wcms->alert('Failed to save settings.', 'danger');
+            $Wcms->log('SimpleFeed: Failed to save settings', 'danger');
         }
     }
 }
@@ -82,45 +84,49 @@ switch ($action) {
         elseif ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['title'], $_POST['token'])) {
             // Use WonderCMS token verification
             if (!$Wcms->verifyFormToken('token')) {
-                echo "<div class='error'>Security check failed. Please try again.</div>";
+                $Wcms->alert('Security check failed. Please try again.', 'danger');
                 include __DIR__.'/../admin/edit_form.php';
                 break;
             }
             
-            // Sanitize input
+            // Sanitize input using WonderCMS functions
             $postData = [
-                'title' => filter_var($_POST['title'], FILTER_SANITIZE_FULL_SPECIAL_CHARS),
-                'date' => filter_var($_POST['date'], FILTER_SANITIZE_FULL_SPECIAL_CHARS),
-                'short' => filter_var($_POST['short'], FILTER_SANITIZE_FULL_SPECIAL_CHARS),
-                'image' => filter_var($_POST['image'], FILTER_SANITIZE_URL),
-                'author' => filter_var($_POST['author'], FILTER_SANITIZE_FULL_SPECIAL_CHARS),
+                'title' => $Wcms->stripTags($_POST['title']),
+                'date' => $Wcms->stripTags($_POST['date']),
+                'short' => $Wcms->stripTags($_POST['short']),
+                'image' => $Wcms->stripTags($_POST['image']),
+                'author' => $Wcms->stripTags($_POST['author']),
                 'content' => $_POST['content'], // Content wird später je nach Markdown/HTML-Einstellung verarbeitet
-                'tags' => array_filter(array_map('trim', explode(',', $_POST['tags']))),
+                'tags' => array_filter(array_map(function($tag) use ($Wcms) { 
+                    return $Wcms->stripTags(trim($tag)); 
+                }, explode(',', $_POST['tags']))),
                 'use_markdown' => (isset($_POST['use_markdown']) && $_POST['use_markdown'] == '1')
             ];
             
             // Validate
             $errors = sf_validatePost($postData);
             if (!empty($errors)) {
-                echo "<div class='error'><strong>Please correct the following errors:</strong><ul>";
+                $errorMessage = "<strong>Please correct the following errors:</strong><ul>";
                 foreach ($errors as $error) {
-                    echo "<li>".htmlspecialchars($error, ENT_QUOTES)."</li>";
+                    $errorMessage .= "<li>" . $Wcms->stripTags($error) . "</li>";
                 }
-                echo "</ul></div>";
+                $errorMessage .= "</ul>";
+                $Wcms->alert($errorMessage, 'danger');
+                
                 $post = $postData;
                 include __DIR__.'/../admin/edit_form.php';
                 break;
             }
             
-            // Wenn Markdown nicht verwendet wird, dann HTML-Content sanitizen
+            // Wenn Markdown nicht verwendet wird, dann HTML-Content bereinigen
             if (!$postData['use_markdown']) {
-                $postData['content'] = sf_sanitizeHTML($postData['content']);
+                $postData['content'] = $Wcms->purify($postData['content']);
             }
             
             // Determine slug
             if (!empty($_POST['original_slug'])) {
                 // Editing existing post - keep original slug
-                $slug = filter_var($_POST['original_slug'], FILTER_SANITIZE_FULL_SPECIAL_CHARS);
+                $slug = $Wcms->stripTags($_POST['original_slug']);
             } else {
                 // New post - generate slug from title
                 $slug = sf_generateSlug($postData['title']);
@@ -131,11 +137,16 @@ switch ($action) {
             // Save the file
             $file = __DIR__.'/../data/'.basename($slug).'.json';
             if (sf_safeWriteFile($file, $postData)) {
-                echo "<div class='success'>Post saved successfully.</div>";
-                header('Location: ?page=simplefeed&action=list');
+                $Wcms->alert('Post saved successfully.', 'success');
+                $Wcms->log('SimpleFeed: Post saved - ' . $slug, 'info');
+                
+                // Redirect to post list
+                echo '<script>window.location.href="?page=simplefeed&action=list";</script>';
                 exit;
             } else {
-                echo "<div class='error'>Error saving post.</div>";
+                $Wcms->alert('Error saving post.', 'danger');
+                $Wcms->log('SimpleFeed: Failed to save post - ' . $slug, 'danger');
+                
                 $post = $postData;
                 include __DIR__.'/../admin/edit_form.php';
             }
@@ -163,22 +174,28 @@ switch ($action) {
             $file = __DIR__.'/../data/'.basename($slug).'.json';
             
             if (!$confirm) {
-                echo "<div class='confirm-delete'>
-                      <p>Are you sure you want to delete: <strong>".htmlspecialchars($slug, ENT_QUOTES)."</strong>?</p>
-                      <a href='?page=simplefeed&action=delete&slug=".urlencode($slug)."&confirm=1&token=".$Wcms->getToken()."' class='btn-delete'>Yes, delete</a>
-                      <a href='?page=simplefeed&action=list' class='btn-cancel'>Cancel</a>
-                      </div>";
+                // Die Verwendung von $Wcms->alert würde den Confirm-Button überlagern,
+                // daher verwenden wir hier spezielle HTML-Ausgabe
+                echo "<div class='confirm-delete'>";
+                echo "<p>Are you sure you want to delete: <strong>" . $Wcms->stripTags($slug) . "</strong>?</p>";
+                echo "<a href='?page=simplefeed&action=delete&slug=" . urlencode($slug) . "&confirm=1&token=" . $Wcms->getToken() . "' class='btn-delete'>Yes, delete</a> ";
+                echo "<a href='?page=simplefeed&action=list' class='btn-cancel'>Cancel</a>";
+                echo "</div>";
             } else {
                 // Use WonderCMS token verification
                 if (!isset($_GET['token']) || !$Wcms->verifyToken($_GET['token'])) {
-                    echo "<div class='error'>Security check failed. Please try again.</div>";
+                    $Wcms->alert('Security check failed. Please try again.', 'danger');
                 } else if (file_exists($file)) {
                     if (unlink($file)) {
-                        echo "<div class='success'>Post deleted successfully.</div>";
-                        header('Location: ?page=simplefeed&action=list');
+                        $Wcms->alert('Post deleted successfully.', 'success');
+                        $Wcms->log('SimpleFeed: Post deleted - ' . $slug, 'info');
+                        
+                        // Redirect to post list
+                        echo '<script>window.location.href="?page=simplefeed&action=list";</script>';
                         exit;
                     } else {
-                        echo "<div class='error'>Error deleting post.</div>";
+                        $Wcms->alert('Error deleting post.', 'danger');
+                        $Wcms->log('SimpleFeed: Failed to delete post - ' . $slug, 'danger');
                     }
                 }
             }
@@ -204,13 +221,13 @@ switch ($action) {
                 if (isset($post['use_markdown']) && $post['use_markdown']) {
                     $post['content_html'] = sf_parseMarkdown($post['content']);
                 } else {
-                    // HTML wurde bereits beim Speichern gesäubert
+                    // HTML wurde bereits beim Speichern gereinigt mit $Wcms->purify()
                     $post['content_html'] = $post['content'];
                 }
                 
                 include __DIR__.'/../templates/feed_view.php';
             } else {
-                echo "<div class='error'>Post not found.</div>";
+                $Wcms->alert('Post not found.', 'danger');
                 include __DIR__.'/../templates/feed_list.php';
             }
         }
@@ -240,7 +257,7 @@ switch ($action) {
                 if (isset($post['use_markdown']) && $post['use_markdown']) {
                     $post['content_html'] = sf_parseMarkdown($post['content']);
                 } else {
-                    // HTML wurde bereits beim Speichern gesäubert
+                    // HTML wurde bereits beim Speichern gereinigt
                     $post['content_html'] = $post['content'];
                 }
             }
