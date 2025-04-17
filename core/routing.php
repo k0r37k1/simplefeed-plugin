@@ -1,6 +1,9 @@
 <?php
 defined('INC_ROOT') || die;
 
+// Füge Markdown-Funktionalität hinzu
+require_once __DIR__ . '/markdown.php';
+
 // Start session if not already started
 if (session_status() === PHP_SESSION_NONE) {
     session_start();
@@ -27,7 +30,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST'
         $cfg = [
             'date_format' => filter_var(trim($_POST['date_format']), FILTER_SANITIZE_FULL_SPECIAL_CHARS),
             'show_more_limit' => filter_var($_POST['show_more_limit'], FILTER_VALIDATE_INT, ['options' => ['min_range' => 1, 'default' => 4]]),
-            'use_thumbnails' => (filter_var($_POST['use_thumbnails'], FILTER_VALIDATE_INT) === 1)
+            'use_thumbnails' => (filter_var($_POST['use_thumbnails'], FILTER_VALIDATE_INT) === 1),
+            'default_markdown' => isset($_POST['default_markdown']) ? (filter_var($_POST['default_markdown'], FILTER_VALIDATE_INT) === 1) : true
         ];
         
         if (sf_safeWriteFile(__DIR__.'/../data/settings.json', $cfg)) {
@@ -53,6 +57,15 @@ switch ($action) {
             
             if (file_exists($file)) {
                 $post = sf_safeReadFile($file, true);
+                // Default to Markdown if not specified
+                if (!isset($post['use_markdown'])) {
+                    $config = sf_getConfig();
+                    $post['use_markdown'] = $config['default_markdown'] ?? true;
+                }
+            } else {
+                // Für neuen Post: Default-Wert für Markdown aus den Einstellungen holen
+                $config = sf_getConfig();
+                $post['use_markdown'] = $config['default_markdown'] ?? true;
             }
             
             include __DIR__.'/../admin/edit_form.php';
@@ -72,8 +85,9 @@ switch ($action) {
                 'short' => filter_var($_POST['short'], FILTER_SANITIZE_FULL_SPECIAL_CHARS),
                 'image' => filter_var($_POST['image'], FILTER_SANITIZE_URL),
                 'author' => filter_var($_POST['author'], FILTER_SANITIZE_FULL_SPECIAL_CHARS),
-                'content' => sf_sanitizeHTML($_POST['content']),
-                'tags' => array_filter(array_map('trim', explode(',', $_POST['tags'])))
+                'content' => $_POST['content'], // Content wird später je nach Markdown/HTML-Einstellung verarbeitet
+                'tags' => array_filter(array_map('trim', explode(',', $_POST['tags']))),
+                'use_markdown' => (isset($_POST['use_markdown']) && $_POST['use_markdown'] == '1')
             ];
             
             // Validate
@@ -87,6 +101,11 @@ switch ($action) {
                 $post = $postData;
                 include __DIR__.'/../admin/edit_form.php';
                 break;
+            }
+            
+            // Wenn Markdown nicht verwendet wird, dann HTML-Content sanitizen
+            if (!$postData['use_markdown']) {
+                $postData['content'] = sf_sanitizeHTML($postData['content']);
             }
             
             // Determine slug
@@ -113,6 +132,18 @@ switch ($action) {
             }
         } else {
             // New post form
+            $config = sf_getConfig();
+            $post = [
+                'slug' => '',
+                'title' => '',
+                'date' => date('Y-m-d'),
+                'short' => '',
+                'image' => '',
+                'author' => '',
+                'content' => '',
+                'tags' => [],
+                'use_markdown' => $config['default_markdown'] ?? true
+            ];
             include __DIR__.'/../admin/edit_form.php';
         }
         break;
@@ -160,6 +191,14 @@ switch ($action) {
             }
             
             if ($post) {
+                // Konvertiere Markdown zu HTML falls nötig
+                if (isset($post['use_markdown']) && $post['use_markdown']) {
+                    $post['content_html'] = sf_parseMarkdown($post['content']);
+                } else {
+                    // HTML wurde bereits beim Speichern gesäubert
+                    $post['content_html'] = $post['content'];
+                }
+                
                 include __DIR__.'/../templates/feed_view.php';
             } else {
                 echo "<div class='error'>Post not found.</div>";
@@ -191,6 +230,17 @@ switch ($action) {
                 // Frontend laden
                 $config = sf_getConfig();
                 $posts = sf_loadPosts();
+                
+                // Markdown zu HTML konvertieren
+                foreach ($posts as &$post) {
+                    if (isset($post['use_markdown']) && $post['use_markdown']) {
+                        $post['content_html'] = sf_parseMarkdown($post['content']);
+                    } else {
+                        // HTML wurde bereits beim Speichern gesäubert
+                        $post['content_html'] = $post['content'];
+                    }
+                }
+                
                 include __DIR__.'/../templates/feed_list.php';
             }
         }
