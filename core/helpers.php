@@ -2,12 +2,15 @@
 defined('INC_ROOT') || die;
 
 /**
- * Erzeugt URL‑freundlichen Slug aus Titel.
- * Unterstützt auch nicht-lateinische Zeichen durch Transliteration.
+ * Generate URL-friendly slug from title.
+ * Supports non-latin characters through transliteration.
+ * 
+ * @param string $title The title to convert to a slug
+ * @return string URL-friendly slug
  */
 function sf_generateSlug(string $title): string {
     // Transliterate non-latin characters
-    $slug = transliterateName($title);
+    $slug = sf_transliterateName($title);
     $slug = strtolower(trim($slug));
     $slug = preg_replace('/[^a-z0-9-]+/', '-', $slug);
     return trim($slug, '-');
@@ -15,8 +18,11 @@ function sf_generateSlug(string $title): string {
 
 /**
  * Transliterate non-latin characters to latin equivalents
+ * 
+ * @param string $str String to transliterate
+ * @return string Transliterated string
  */
-function transliterateName($str) {
+function sf_transliterateName($str) {
     $transliterationTable = [
         'ä' => 'ae', 'ö' => 'oe', 'ü' => 'ue', 'ß' => 'ss',
         'Ä' => 'Ae', 'Ö' => 'Oe', 'Ü' => 'Ue',
@@ -31,97 +37,117 @@ function transliterateName($str) {
 }
 
 /**
- * Lädt alle Posts aus data/*.json, sortiert nach Datum.
+ * Load all posts from data/*.json, sorted by date.
+ * 
+ * @return array Array of posts
  */
 function sf_loadPosts(): array {
+    global $Wcms;
     $dataPath = __DIR__ . '/../data';
     
+    // Create data directory if it doesn't exist
     if (!is_dir($dataPath)) {
-        mkdir($dataPath, 0755, true);
-        return [];
+        if (!mkdir($dataPath, 0755, true)) {
+            if (method_exists($Wcms, 'log')) {
+                $Wcms->log('SimpleFeed: Failed to create data directory', 'danger');
+            }
+            return [];
+        }
     }
     
+    // Get all JSON files
     $files = glob($dataPath . '/*.json');
     if (!$files) return [];
     
     $posts = [];
     foreach ($files as $f) {
+        // Skip settings file
         if (basename($f) === 'settings.json') continue;
         
+        // Verify file is within the data directory (prevent path traversal)
+        if (strpos(realpath($f), realpath($dataPath)) !== 0) {
+            if (method_exists($Wcms, 'log')) {
+                $Wcms->log('SimpleFeed: Security warning - attempted access to file outside data directory', 'danger');
+            }
+            continue;
+        }
+        
+        // Read file securely
         $content = @file_get_contents($f);
         if (!$content) continue;
         
+        // Parse JSON
         $j = json_decode($content, true);
         if ($j && isset($j['slug'], $j['title'], $j['date'])) {
             $posts[] = $j;
         }
     }
     
+    // Sort by date (descending)
     usort($posts, fn($a,$b) => strtotime($b['date'] ?? 'now') - strtotime($a['date'] ?? 'now'));
     return $posts;
 }
 
 /**
  * Validates post data before saving
+ * 
+ * @param array $post Post data to validate
+ * @return array Array of validation errors
  */
 function sf_validatePost(array $post): array {
     $errors = [];
     
+    // Title is required
     if (empty($post['title'])) {
         $errors[] = 'Title is required';
     }
     
+    // Valid date is required
     if (empty($post['date']) || !preg_match('/^\d{4}-\d{2}-\d{2}$/', $post['date'])) {
         $errors[] = 'Valid date (YYYY-MM-DD) is required';
+    }
+    
+    // Image URL validation if provided
+    if (!empty($post['image']) && filter_var($post['image'], FILTER_VALIDATE_URL) === false) {
+        $errors[] = 'Image URL must be a valid URL';
     }
     
     return $errors;
 }
 
 /**
- * Sanitizes HTML content
- */
-function sf_sanitizeHTML(string $html): string {
-    // Basic sanitization - a more comprehensive solution would use
-    // a proper HTML Purifier library
-    $allowed_tags = '<p><br><h1><h2><h3><h4><h5><h6><ul><ol><li><a><strong><em><blockquote><pre><code><img><table><tr><td><th>';
-    return strip_tags($html, $allowed_tags);
-}
-
-/**
- * Generate CSRF token
- */
-function sf_generateCSRFToken(): string {
-    if (!isset($_SESSION['sf_csrf_token'])) {
-        $_SESSION['sf_csrf_token'] = bin2hex(random_bytes(32));
-    }
-    return $_SESSION['sf_csrf_token'];
-}
-
-/**
- * Validate CSRF token
- */
-function sf_validateCSRFToken(?string $token): bool {
-    if (empty($_SESSION['sf_csrf_token']) || empty($token)) {
-        return false;
-    }
-    
-    return hash_equals($_SESSION['sf_csrf_token'], $token);
-}
-
-/**
  * Safe file read with error handling
+ * 
+ * @param string $path File path
+ * @param bool $json Whether to parse as JSON
+ * @return mixed File contents or empty string/array on error
  */
 function sf_safeReadFile(string $path, bool $json = false) {
+    global $Wcms;
+    
+    // Verify file exists
     if (!file_exists($path)) {
         return $json ? [] : '';
     }
     
+    // Verify path is inside plugin directory (prevent path traversal)
+    $pluginPath = realpath(__DIR__ . '/..');
+    $realPath = realpath($path);
+    
+    if (!$realPath || strpos($realPath, $pluginPath) !== 0) {
+        if (method_exists($Wcms, 'log')) {
+            $Wcms->log('SimpleFeed: Security warning - attempted to read file outside plugin directory', 'danger');
+        }
+        return $json ? [] : '';
+    }
+    
+    // Read file
     $content = @file_get_contents($path);
     if ($content === false) {
         return $json ? [] : '';
     }
     
+    // Parse as JSON if requested
     if ($json) {
         $data = json_decode($content, true);
         return is_array($data) ? $data : [];
@@ -132,20 +158,51 @@ function sf_safeReadFile(string $path, bool $json = false) {
 
 /**
  * Safe file write with error handling
+ * 
+ * @param string $path File path
+ * @param mixed $data Data to write
+ * @return bool Success
  */
 function sf_safeWriteFile(string $path, $data): bool {
+    global $Wcms;
+    
+    // Create directory if it doesn't exist
     $dir = dirname($path);
     if (!is_dir($dir)) {
         if (!@mkdir($dir, 0755, true)) {
+            if (method_exists($Wcms, 'log')) {
+                $Wcms->log('SimpleFeed: Failed to create directory: ' . $dir, 'danger');
+            }
             return false;
         }
     }
     
+    // Verify path is inside plugin directory (prevent path traversal)
+    $pluginPath = realpath(__DIR__ . '/..');
+    $realDir = realpath($dir);
+    
+    if (!$realDir || strpos($realDir, $pluginPath) !== 0) {
+        if (method_exists($Wcms, 'log')) {
+            $Wcms->log('SimpleFeed: Security warning - attempted to write file outside plugin directory', 'danger');
+        }
+        return false;
+    }
+    
+    // Prepare content
     if (is_array($data)) {
         $content = json_encode($data, JSON_PRETTY_PRINT);
     } else {
         $content = (string)$data;
     }
     
-    return @file_put_contents($path, $content) !== false;
+    // Write file
+    $result = @file_put_contents($path, $content);
+    if ($result === false) {
+        if (method_exists($Wcms, 'log')) {
+            $Wcms->log('SimpleFeed: Failed to write file: ' . basename($path), 'danger');
+        }
+        return false;
+    }
+    
+    return true;
 }
