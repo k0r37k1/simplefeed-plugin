@@ -1,12 +1,21 @@
 <?php
 defined('INC_ROOT') || die;
+global $Wcms;
+
+// Make sure user is logged in as admin
+if (!$Wcms->loggedIn) {
+    echo "<div class='error'>Access denied. Please log in as administrator.</div>";
+    return;
+}
+
 $config = sf_getConfig();
 ?>
 <div class="sf-admin-panel">
   <h2>SimpleFeed Settings</h2>
   
   <form method="post" action="?page=simplefeed&action=settings">
-    <input type="hidden" name="sf_csrf_token" value="<?php echo sf_generateCSRFToken(); ?>">
+    <!-- Use WonderCMS token instead of our custom one -->
+    <input type="hidden" name="token" value="<?php echo $Wcms->getToken(); ?>">
     
     <div class="form-group">
       <label for="date_format">Date Format:</label>
