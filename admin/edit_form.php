@@ -1,10 +1,19 @@
 <?php
 defined('INC_ROOT') || die;
+global $Wcms;
+
+// Make sure user is logged in as admin
+if (!$Wcms->loggedIn) {
+    echo "<div class='error'>Access denied. Please log in as administrator.</div>";
+    return;
+}
+
 $post = $post ?? ['slug'=>'','title'=>'','date'=>date('Y-m-d'),'short'=>'','image'=>'','author'=>'','content'=>'','tags'=>[], 'use_markdown'=>true];
 ?>
 <h2><?php echo $post['slug'] ? 'Edit' : 'New'; ?> Post</h2>
 <form method="post" class="sf-edit-form" id="postForm">
-  <input type="hidden" name="sf_csrf_token" value="<?php echo sf_generateCSRFToken(); ?>">
+  <!-- Use WonderCMS token instead of our custom one -->
+  <input type="hidden" name="token" value="<?php echo $Wcms->getToken(); ?>">
   <input type="hidden" name="original_slug" value="<?php echo htmlspecialchars($post['slug'], ENT_QUOTES); ?>">
   
   <div class="form-group">
