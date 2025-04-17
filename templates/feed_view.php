@@ -1,11 +1,13 @@
 <?php
 require_once __DIR__ . '/../core/settings.php';
 require_once __DIR__ . '/../core/helpers.php';
+global $Wcms;
+
 $config = sf_getConfig();
 
 // Make sure $post is defined
 if (!isset($post) || !is_array($post)) {
-    echo "<div class='error'>Post not found</div>";
+    $Wcms->alert('Post not found', 'danger');
     return;
 }
 
@@ -25,12 +27,12 @@ foreach ($posts as $i => $p) {
 
 <article class="sf-post-full">
     <header class="sf-post-header">
-        <h2><?php echo htmlspecialchars($post['title'], ENT_QUOTES); ?></h2>
+        <h2><?php echo $Wcms->stripTags($post['title']); ?></h2>
         
         <div class="sf-post-meta">
             <?php if (!empty($post['author'])): ?>
                 <span class="sf-post-author">
-                    By <?php echo htmlspecialchars($post['author'], ENT_QUOTES); ?>
+                    By <?php echo $Wcms->stripTags($post['author']); ?>
                 </span>
             <?php endif; ?>
             
@@ -43,7 +45,7 @@ foreach ($posts as $i => $p) {
                     Tags: 
                     <?php foreach ($post['tags'] as $tag): ?>
                         <a href="?page=simplefeed&action=tag&tag=<?php echo urlencode($tag); ?>" class="sf-tag">
-                            <?php echo htmlspecialchars($tag, ENT_QUOTES); ?>
+                            <?php echo $Wcms->stripTags($tag); ?>
                         </a>
                     <?php endforeach; ?>
                 </div>
@@ -53,17 +55,17 @@ foreach ($posts as $i => $p) {
     
     <?php if (!empty($post['image'])): ?>
         <div class="sf-post-image">
-            <img src="<?php echo htmlspecialchars($post['image'], ENT_QUOTES); ?>" 
-                 alt="<?php echo htmlspecialchars($post['title'], ENT_QUOTES); ?>" 
+            <img src="<?php echo $Wcms->stripTags($post['image']); ?>" 
+                 alt="<?php echo $Wcms->stripTags($post['title']); ?>" 
                  loading="lazy">
         </div>
     <?php endif; ?>
     
     <div class="sf-post-content">
         <?php 
-        // Verwende content_html, der bereits in routing.php je nach Markdown-Einstellung
-        // entweder über Parsedown oder über sf_sanitizeHTML geleitet wurde
-        echo isset($post['content_html']) ? $post['content_html'] : sf_sanitizeHTML($post['content']); 
+        // Content wurde bereits in routing.php je nach Markdown-Einstellung verarbeitet
+        // und in content_html gespeichert
+        echo isset($post['content_html']) ? $post['content_html'] : ''; 
         ?>
     </div>
     
@@ -79,7 +81,7 @@ foreach ($posts as $i => $p) {
                 <div class="sf-post-prev">
                     <a href="?page=simplefeed&action=view&slug=<?php echo urlencode($prev['slug']); ?>">
                         <span class="nav-arrow">←</span> 
-                        <span class="nav-title"><?php echo htmlspecialchars($prev['title'], ENT_QUOTES); ?></span>
+                        <span class="nav-title"><?php echo $Wcms->stripTags($prev['title']); ?></span>
                     </a>
                 </div>
             <?php endif; ?>
@@ -87,7 +89,7 @@ foreach ($posts as $i => $p) {
             <?php if ($next): ?>
                 <div class="sf-post-next">
                     <a href="?page=simplefeed&action=view&slug=<?php echo urlencode($next['slug']); ?>">
-                        <span class="nav-title"><?php echo htmlspecialchars($next['title'], ENT_QUOTES); ?></span>
+                        <span class="nav-title"><?php echo $Wcms->stripTags($next['title']); ?></span>
                         <span class="nav-arrow">→</span>
                     </a>
                 </div>
