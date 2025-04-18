@@ -8,17 +8,28 @@ defined('INC_ROOT') || die;
  */
 function sf_getConfig(): array {
     global $Wcms;
+    
+    // Get plugin directory path (defined in functions.php)
+    if (function_exists('sf_getPluginPath')) {
+        $pluginPath = sf_getPluginPath();
+    } else {
+        $pluginPath = __DIR__ . '/..';
+    }
 
     // Load default config
-    $default = include __DIR__ . '/../config.php';
+    $default = include $pluginPath . '/config.php';
 
     // Path to custom settings
-    $path = __DIR__ . '/../data/settings.json';
+    $settingsPath = $pluginPath . '/data/settings.json';
 
     // Securely check and read file
-    if (file_exists($path)) {
-        // Use safe file reading instead of direct file_get_contents
-        $content = @file_get_contents($path);
+    if (file_exists($settingsPath)) {
+        // Use safe file reading
+        if (function_exists('sf_safeReadFile')) {
+            $content = sf_safeReadFile($settingsPath);
+        } else {
+            $content = @file_get_contents($settingsPath);
+        }
 
         if ($content !== false) {
             $custom = json_decode($content, true);
