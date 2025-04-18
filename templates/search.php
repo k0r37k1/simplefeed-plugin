@@ -7,7 +7,7 @@ global $Wcms;
  * Include this template wherever you want to show the search box
  * 
  * Example usage in theme.php:
- * <?php include __DIR__ . '/plugins/simplefeed/templates/search-integration.php'; ?>
+ * <?php include __DIR__ . '/plugins/simplefeed/templates/search.php'; ?>
  */
 ?>
 
