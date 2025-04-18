@@ -51,6 +51,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 const title = document.getElementById('title').value || 'Post Preview';
                 const content = document.getElementById('content').value || 'No content';
                 const image = document.getElementById('image').value || '';
+                const useMarkdown = document.querySelector('input[name="use_markdown"]:checked').value === '1';
 
                 // Create preview window
                 const previewWindow = window.open('', 'preview', 'width=800,height=600,scrollbars=yes');
@@ -66,6 +67,15 @@ document.addEventListener('DOMContentLoaded', function() {
                             h1 { margin-top: 0; }
                             img { max-width: 100%; height: auto; }
                             .preview-notice { background: #ffffd8; padding: 10px; border: 1px solid #e6e6b8; margin-bottom: 20px; }
+                            
+                            /* Markdown content styling */
+                            .content blockquote { border-left: 4px solid #ddd; padding-left: 1em; margin-left: 0; color: #555; font-style: italic; }
+                            .content pre { background: #f5f5f5; padding: 1em; border-radius: 4px; overflow-x: auto; }
+                            .content code { background: #f5f5f5; padding: 0.2em 0.4em; border-radius: 3px; font-family: monospace; }
+                            .content pre code { padding: 0; background: none; }
+                            .content table { border-collapse: collapse; width: 100%; margin-bottom: 1.2em; }
+                            .content th, .content td { border: 1px solid #ddd; padding: 8px; }
+                            .content th { background-color: #f5f5f5; text-align: left; }
                         </style>
                     </head>
                     <body>
@@ -78,9 +88,12 @@ document.addEventListener('DOMContentLoaded', function() {
                     previewHTML += `<div><img src="${escapeHTML(image)}" alt="Preview image"></div>`;
                 }
 
-                // Add content
+                // Add content - note that we don't have actual Markdown parsing in the preview
                 previewHTML += `
-                        <div>${content}</div>
+                        <div class="content">${useMarkdown ?
+                    '<div style="color:#777;margin-bottom:15px;font-size:12px;">(Note: Markdown will be properly rendered when saved)</div>' +
+                    escapeHTML(content).replace(/\n/g, '<br>') :
+                    content}</div>
                     </body>
                     </html>
                 `;

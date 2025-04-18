@@ -11,10 +11,10 @@ global $Wcms;
  */
 function sf_loadParsedown() {
     global $Wcms;
-    
+
     if (!class_exists('Parsedown')) {
         $parsedownPath = __DIR__ . '/../lib/Parsedown.php';
-        
+
         if (file_exists($parsedownPath)) {
             require_once $parsedownPath;
         } else {
@@ -24,28 +24,28 @@ function sf_loadParsedown() {
             return false;
         }
     }
-    
+
     return true;
 }
 
 /**
  * Convert Markdown to HTML using Parsedown
- * 
+ *
  * @param string $markdown The Markdown text
  * @return string The generated HTML
  */
 function sf_parseMarkdown(string $markdown): string {
     global $Wcms;
-    
+
     if (!sf_loadParsedown()) {
         if (method_exists($Wcms, 'log')) {
             $Wcms->log('SimpleFeed: Failed to parse Markdown - Parsedown library not available', 'warning');
         }
         return $Wcms->purify($markdown); // Fallback to just purifying the input
     }
-    
+
     static $parser = null;
-    
+
     // Singleton pattern for Parsedown instance
     if ($parser === null) {
         $parser = new Parsedown();
@@ -54,20 +54,20 @@ function sf_parseMarkdown(string $markdown): string {
             $parser->setSafeMode(true);
         }
     }
-    
+
     $html = $parser->text($markdown);
-    
+
     // Additional purification using WonderCMS if needed
     if (method_exists($Wcms, 'purify')) {
         $html = $Wcms->purify($html);
     }
-    
+
     return $html;
 }
 
 /**
  * Check if text contains Markdown
- * 
+ *
  * @param string $text The text to check
  * @return bool True if the text contains Markdown structures
  */
@@ -94,19 +94,19 @@ function sf_isMarkdown(string $text): bool {
 
 /**
  * Auto-detect whether content is Markdown and convert accordingly
- * 
+ *
  * @param string $content The text content
  * @param bool $isMarkdown Optional: Explicitly treat as Markdown
  * @return string Converted content
  */
 function sf_processContent(string $content, bool $isMarkdown = null): string {
     global $Wcms;
-    
+
     // Auto-detect if not specified
     if ($isMarkdown === null) {
         $isMarkdown = sf_isMarkdown($content);
     }
-    
+
     if ($isMarkdown) {
         return sf_parseMarkdown($content);
     } else {

@@ -1,10 +1,6 @@
 <?php
-require_once __DIR__ . '/../core/settings.php';
-require_once __DIR__ . '/../core/helpers.php';
+defined('INC_ROOT') || die;
 global $Wcms;
-
-$config = sf_getConfig();
-$posts = sf_loadPosts();
 
 // Group posts by year
 $postsByYear = [];
@@ -22,7 +18,7 @@ krsort($postsByYear);
 
 <div class="sf-archive-container">
     <h2>Post Archive</h2>
-    
+
     <?php if (empty($posts)): ?>
         <div class="sf-empty-archive">
             <p>No posts found in the archive.</p>
@@ -32,18 +28,18 @@ krsort($postsByYear);
             <?php foreach ($postsByYear as $year => $yearPosts): ?>
                 <div class="sf-archive-year">
                     <h3><?php echo $year; ?></h3>
-                    
+
                     <ul class="sf-archive-posts">
                         <?php foreach ($yearPosts as $post): ?>
                             <li class="sf-archive-item">
                                 <span class="sf-archive-date">
                                     <?php echo date($config['date_format'], strtotime($post['date'])); ?>
                                 </span>
-                                
+
                                 <a href="?page=simplefeed&action=view&slug=<?php echo urlencode($post['slug']); ?>" class="sf-archive-title">
                                     <?php echo $Wcms->stripTags($post['title']); ?>
                                 </a>
-                                
+
                                 <?php if (!empty($post['tags'])): ?>
                                     <span class="sf-archive-tags">
                                         <?php foreach ($post['tags'] as $tag): ?>
@@ -60,7 +56,7 @@ krsort($postsByYear);
             <?php endforeach; ?>
         </div>
     <?php endif; ?>
-    
+
     <div class="sf-archive-footer">
         <a href="?page=simplefeed" class="sf-button sf-back-to-feed">
             ← Back to Feed
