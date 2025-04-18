@@ -22,7 +22,7 @@ try {
     $config = sf_getConfig();
 
     // Create data directory if it doesn't exist
-    $dataDir = __DIR__ . '/data';
+    $dataDir = sf_getDataPath();
     if (!is_dir($dataDir)) {
         if (!mkdir($dataDir, 0755, true)) {
             throw new Exception('Failed to create data directory');
@@ -111,7 +111,8 @@ try {
                     'default_markdown' => isset($_POST['default_markdown']) ? ((int)$_POST['default_markdown'] === 1) : true
                 ];
 
-                if (sf_safeWriteFile(__DIR__.'/data/settings.json', $cfg)) {
+                $settingsPath = sf_getDataPath() . '/settings.json';
+                if (sf_safeWriteFile($settingsPath, $cfg)) {
                     $Wcms->alert('Settings saved successfully.', 'success');
                     $Wcms->log('SimpleFeed: Settings updated', 'info');
                 } else {
@@ -172,191 +173,20 @@ try {
                     $postData['slug'] = $slug;
 
                     // Save the file
-                    $file = __DIR__.'/data/'.basename($slug).'.json';
+                    $file = sf_getDataPath() . '/' . basename($slug) . '.json';
                     if (sf_safeWriteFile($file, $postData)) {
                         $Wcms->alert('Post saved successfully.', 'success');
                         $Wcms->log('SimpleFeed: Post saved - ' . $slug, 'info');
 
                         // Redirect to list view
                         if (!headers_sent()) {
-                            header('Location: ?page=simplefeed&action=list');
+                            header('Location: ' . $Wcms->url('?page=simplefeed&action=list'));
                             exit;
                         } else {
-                            echo '<script>window.location.href="?page=simplefeed&action=list";</script>';
+                            echo '<script>window.location.href="' . $Wcms->url('?page=simplefeed&action=list') . '";</script>';
                             exit;
                         }
                     } else {
                         $Wcms->alert('Error saving post.', 'danger');
                         $Wcms->log('SimpleFeed: Failed to save post - ' . $slug, 'danger');
                     }
-                }
-            }
-        }
-
-        // Handle delete actions
-        if ($action === 'delete' && !empty($slug) && $isAdmin) {
-            $file = __DIR__.'/data/'.basename($slug).'.json';
-
-            if (!$confirm) {
-                // Using custom HTML for confirmation dialog to avoid overlay issues
-                ob_start();
-                echo "<div class='confirm-delete'>";
-                echo "<p>Are you sure you want to delete: <strong>" . $Wcms->stripTags($slug) . "</strong>?</p>";
-                echo "<a href='?page=simplefeed&action=delete&slug=" . urlencode($slug) . "&confirm=1&token=" . $Wcms->getToken() . "' class='btn-delete'>Yes, delete</a> ";
-                echo "<a href='?page=simplefeed&action=list' class='btn-cancel'>Cancel</a>";
-                echo "</div>";
-                $page['content'] = ob_get_clean();
-                return $page;
-            } else {
-                // Use WonderCMS token verification
-                if (!isset($_GET['token']) || !$Wcms->verifyToken($_GET['token'])) {
-                    $Wcms->alert('Security check failed. Please try again.', 'danger');
-                } else if (file_exists($file)) {
-                    // Verify file is within the data directory (prevent path traversal)
-                    $dataPath = realpath(__DIR__ . '/data');
-                    $realFile = realpath($file);
-
-                    if ($realFile && strpos($realFile, $dataPath) === 0) {
-                        if (unlink($file)) {
-                            $Wcms->alert('Post deleted successfully.', 'success');
-                            $Wcms->log('SimpleFeed: Post deleted - ' . $slug, 'info');
-
-                            // Redirect to list view
-                            if (!headers_sent()) {
-                                header('Location: ?page=simplefeed&action=list');
-                                exit;
-                            } else {
-                                echo '<script>window.location.href="?page=simplefeed&action=list";</script>';
-                                exit;
-                            }
-                        } else {
-                            $Wcms->alert('Error deleting post.', 'danger');
-                            $Wcms->log('SimpleFeed: Failed to delete post - ' . $slug, 'danger');
-                        }
-                    } else {
-                        $Wcms->alert('Security error: Invalid file path.', 'danger');
-                        $Wcms->log('SimpleFeed: Security warning - attempted to delete file outside data directory', 'danger');
-                    }
-                }
-            }
-        }
-
-        // Load common data
-        $config = sf_getConfig();
-        $posts = sf_loadPosts();
-
-        // Convert Markdown to HTML for posts when needed
-        foreach ($posts as &$post) {
-            if (isset($post['use_markdown']) && $post['use_markdown']) {
-                $post['content_html'] = sf_parseMarkdown($post['content']);
-            } else {
-                // HTML was already cleaned when saving
-                $post['content_html'] = $post['content'];
-            }
-        }
-
-        // Content based on action
-        ob_start();
-
-        switch ($action) {
-            case 'list':
-                // Admin only: List View
-                include __DIR__.'/admin/list.php';
-                break;
-
-            case 'edit':
-                // Admin only: Edit Form
-                if ($_SERVER['REQUEST_METHOD'] === 'GET') {
-                    $post = [];
-
-                    if (!empty($slug)) {
-                        $file = __DIR__.'/data/'.basename($slug).'.json';
-                        if (file_exists($file)) {
-                            $post = sf_safeReadFile($file, true);
-                        }
-                    }
-
-                    // Default values for new post if needed
-                    if (empty($post)) {
-                        $post = [
-                            'slug' => '',
-                            'title' => '',
-                            'date' => date('Y-m-d'),
-                            'short' => '',
-                            'image' => '',
-                            'author' => '',
-                            'content' => '',
-                            'tags' => [],
-                            'use_markdown' => $config['default_markdown'] ?? true
-                        ];
-                    }
-
-                    // Default to Markdown if not specified
-                    if (!isset($post['use_markdown'])) {
-                        $post['use_markdown'] = $config['default_markdown'] ?? true;
-                    }
-
-                    include __DIR__.'/admin/edit.php';
-                }
-                break;
-
-            case 'view':
-                // View Single Post (public)
-                if (!empty($slug)) {
-                    $found = false;
-                    foreach ($posts as $p) {
-                        if ($p['slug'] === $slug) {
-                            $post = $p;
-                            $found = true;
-                            break;
-                        }
-                    }
-
-                    if ($found) {
-                        include __DIR__.'/templates/view.php';
-                    } else {
-                        $Wcms->alert('Post not found.', 'danger');
-                        include __DIR__.'/templates/list.php';
-                    }
-                }
-                break;
-
-            case 'archive':
-                // Archive View (public)
-                include __DIR__.'/templates/archive.php';
-                break;
-
-            case 'tag':
-                // Tag Filter (public)
-                include __DIR__.'/templates/list.php';
-                break;
-
-            default:
-                // Default view (settings for admin or feed for public)
-                if ($isAdmin && !isset($_GET['view'], $_GET['archive'], $_GET['tag'])) {
-                    include __DIR__.'/admin/panel.php';
-                } else {
-                    include __DIR__.'/templates/list.php';
-                }
-                break;
-        }
-
-        $page['content'] = ob_get_clean();
-        $page['title'] = 'SimpleFeed';
-        return $page;
-    });
-
-} catch (Exception $e) {
-    // Log error with WonderCMS functions and display friendly message
-    if (method_exists($Wcms, 'log')) {
-        $Wcms->log('SimpleFeed Plugin Error: ' . $e->getMessage(), 'danger');
-    } else {
-        error_log('SimpleFeed Plugin Error: ' . $e->getMessage());
-    }
-
-    if (method_exists($Wcms, 'alert')) {
-        $Wcms->alert('SimpleFeed Plugin Error: ' . $Wcms->stripTags($e->getMessage()), 'danger');
-    } else {
-        echo '<div class="alert alert-danger">SimpleFeed Plugin Error: ' . $Wcms->stripTags($e->getMessage()) . '</div>';
-    }
-}
