@@ -12,7 +12,7 @@ A minimalist feed/blog plugin with tags and navigation for WonderCMS.
 - Image thumbnails
 - Archive view
 
-## New Directory Structure
+## Directory Structure
 
 ```
 simplefeed/
@@ -22,22 +22,23 @@ simplefeed/
 │   └── list.php        # Post list management
 ├── assets/             # Frontend assets
 │   ├── simplefeed.css  # Main stylesheet
-│   ├── simplefeed.js   # JavaScript functionality
-│   └── quill/          # For future Quill.js integration
-├── lib/                # External libraries
-│   └── Parsedown.php   # Markdown processor
-├── data/               # Data storage
-│   └── settings.json   # Plugin settings
+│   └── simplefeed.js   # JavaScript functionality
 ├── core/               # Core functionality
 │   ├── functions.php   # Helper functions
 │   ├── markdown.php    # Markdown functionality
 │   └── settings.php    # Settings management
+├── data/               # Data storage
+│   └── settings.json   # Plugin settings
+├── lib/                # External libraries
+│   └── Parsedown.php   # Markdown processor
 ├── templates/          # Frontend templates
 │   ├── list.php        # Feed list view
-│   ├── view.php        # Single post view
+│   ├── post.php        # Single post view
 │   └── archive.php     # Archive view
 ├── config.php          # Default configuration 
 ├── README.md           # This file
+├── INSTALL.md          # Installation guide
+├── LICENSE             # License information
 └── simplefeed.php      # Main plugin file
 ```
 
@@ -48,6 +49,8 @@ simplefeed/
 3. Log in to your WonderCMS admin panel
 4. The SimpleFeed menu item will appear in your navigation
 5. Click on the SimpleFeed button in the admin panel to manage your posts
+
+See the INSTALL.md file for detailed installation instructions.
 
 ## Markdown Support
 
