@@ -12,6 +12,35 @@ A minimalist feed/blog plugin with tags and navigation for WonderCMS.
 - Image thumbnails
 - Archive view
 
+## New Directory Structure
+
+```
+simplefeed/
+├── admin/              # Admin panel functions
+│   ├── panel.php       # Settings panel
+│   ├── edit.php        # Post editing form
+│   └── list.php        # Post list management
+├── assets/             # Frontend assets
+│   ├── simplefeed.css  # Main stylesheet
+│   ├── simplefeed.js   # JavaScript functionality
+│   └── quill/          # For future Quill.js integration
+├── lib/                # External libraries
+│   └── Parsedown.php   # Markdown processor
+├── data/               # Data storage
+│   └── settings.json   # Plugin settings
+├── core/               # Core functionality
+│   ├── functions.php   # Helper functions
+│   ├── markdown.php    # Markdown functionality
+│   └── settings.php    # Settings management
+├── templates/          # Frontend templates
+│   ├── list.php        # Feed list view
+│   ├── view.php        # Single post view
+│   └── archive.php     # Archive view
+├── config.php          # Default configuration 
+├── README.md           # This file
+└── simplefeed.php      # Main plugin file
+```
+
 ## Installation
 
 1. Download the ZIP file or clone this repository
@@ -19,6 +48,14 @@ A minimalist feed/blog plugin with tags and navigation for WonderCMS.
 3. Log in to your WonderCMS admin panel
 4. The SimpleFeed menu item will appear in your navigation
 5. Click on the SimpleFeed button in the admin panel to manage your posts
+
+## Markdown Support
+
+SimpleFeed includes built-in Markdown support using the Parsedown library. To enable Markdown support:
+
+1. Download Parsedown.php from https://github.com/erusev/parsedown/blob/master/Parsedown.php
+2. Create a `lib` directory inside the SimpleFeed plugin directory (if it doesn't exist)
+3. Place the Parsedown.php file in the `lib` directory
 
 ## Usage
 
@@ -61,3 +98,13 @@ You can configure the following settings:
 ## License
 
 This plugin is licensed under the MIT License - see the LICENSE file for details.
+
+## Upgrading from Previous Version
+
+If you're upgrading from a previous version of SimpleFeed:
+
+1. Backup your `data` directory to preserve your posts
+2. Replace all the plugin files with the new structure
+3. Copy your backed-up `data` directory back to the plugin folder
+
+Your posts and settings will be preserved during the upgrade.
