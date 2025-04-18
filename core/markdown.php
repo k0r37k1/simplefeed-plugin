@@ -11,9 +11,16 @@ global $Wcms;
  */
 function sf_loadParsedown() {
     global $Wcms;
+    
+    // Get plugin directory path (defined in functions.php)
+    if (function_exists('sf_getPluginPath')) {
+        $pluginPath = sf_getPluginPath();
+    } else {
+        $pluginPath = __DIR__ . '/..';
+    }
 
     if (!class_exists('Parsedown')) {
-        $parsedownPath = __DIR__ . '/../lib/Parsedown.php';
+        $parsedownPath = $pluginPath . '/lib/Parsedown.php';
 
         if (file_exists($parsedownPath)) {
             require_once $parsedownPath;
