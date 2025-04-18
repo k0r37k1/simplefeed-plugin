@@ -1,6 +1,6 @@
 <?php
 require_once __DIR__ . '/../core/settings.php';
-require_once __DIR__ . '/../core/helpers.php';
+require_once __DIR__ . '/../core/functions.php';
 global $Wcms;
 
 $config = sf_getConfig();
