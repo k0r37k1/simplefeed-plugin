@@ -36,14 +36,14 @@ krsort($postsByYear);
                                     <?php echo date($config['date_format'], strtotime($post['date'])); ?>
                                 </span>
 
-                                <a href="?page=simplefeed&action=view&slug=<?php echo urlencode($post['slug']); ?>" class="sf-archive-title">
+                                <a href="<?php echo $Wcms->url('?page=simplefeed&action=view&slug=' . urlencode($post['slug'])); ?>" class="sf-archive-title">
                                     <?php echo $Wcms->stripTags($post['title']); ?>
                                 </a>
 
                                 <?php if (!empty($post['tags'])): ?>
                                     <span class="sf-archive-tags">
                                         <?php foreach ($post['tags'] as $tag): ?>
-                                            <a href="?page=simplefeed&action=tag&tag=<?php echo urlencode($tag); ?>" class="sf-tag sf-tag-small">
+                                            <a href="<?php echo $Wcms->url('?page=simplefeed&action=tag&tag=' . urlencode($tag)); ?>" class="sf-tag sf-tag-small">
                                                 <?php echo $Wcms->stripTags($tag); ?>
                                             </a>
                                         <?php endforeach; ?>
@@ -58,7 +58,7 @@ krsort($postsByYear);
     <?php endif; ?>
 
     <div class="sf-archive-footer">
-        <a href="?page=simplefeed" class="sf-button sf-back-to-feed">
+        <a href="<?php echo $Wcms->url('?page=simplefeed'); ?>" class="sf-button sf-back-to-feed">
             ← Back to Feed
         </a>
     </div>
