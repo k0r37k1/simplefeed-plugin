@@ -69,7 +69,7 @@ foreach ($posts as $i => $p) {
         <div class="sf-post-navigation">
             <?php if ($prev): ?>
                 <div class="sf-post-prev">
-                    <a href="<?php echo $Wcms->url('?page=simplefeed&action=view&slug=' . urlencode($prev['slug'])); ?>">
+                    <a href="<?php echo $Wcms->url('?page=simplefeed&action=post&slug=' . urlencode($prev['slug'])); ?>">
                         <span class="nav-arrow">←</span>
                         <span class="nav-title"><?php echo $Wcms->stripTags($prev['title']); ?></span>
                     </a>
@@ -78,7 +78,7 @@ foreach ($posts as $i => $p) {
 
             <?php if ($next): ?>
                 <div class="sf-post-next">
-                    <a href="<?php echo $Wcms->url('?page=simplefeed&action=view&slug=' . urlencode($next['slug'])); ?>">
+                    <a href="<?php echo $Wcms->url('?page=simplefeed&action=post&slug=' . urlencode($next['slug'])); ?>">
                         <span class="nav-title"><?php echo $Wcms->stripTags($next['title']); ?></span>
                         <span class="nav-arrow">→</span>
                     </a>
