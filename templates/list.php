@@ -1,10 +1,12 @@
 <?php
-require_once __DIR__ . '/../core/settings.php';
-require_once __DIR__ . '/../core/functions.php';
+defined('INC_ROOT') || die;
 global $Wcms;
 
-$config = sf_getConfig();
-$posts = sf_loadPosts();
+// Use global variables provided by the main plugin file
+// No need to reload them here as they're passed from the parent scope
+// If they weren't available, we would use:
+// $config = sf_getConfig();
+// $posts = sf_loadPosts();
 
 // Get and sanitize parameters using WonderCMS functions
 $shown = isset($_GET['shown']) ? (int)$_GET['shown'] : $config['show_more_limit'];
@@ -20,7 +22,7 @@ $filtered = isset($tag)
     <?php if (isset($tag)): ?>
         <div class="sf-tag-filter">
             <h3>Posts tagged with: <span class="tag-name"><?php echo $Wcms->stripTags($tag); ?></span></h3>
-            <a href="?page=simplefeed" class="clear-filter">Clear filter</a>
+            <a href="<?php echo $Wcms->url('?page=simplefeed'); ?>" class="clear-filter">Clear filter</a>
         </div>
     <?php endif; ?>
     
@@ -38,7 +40,7 @@ $filtered = isset($tag)
                 <article class="sf-post">
                     <header class="sf-post-header">
                         <h3 class="sf-post-title">
-                            <a href="?page=simplefeed&action=view&slug=<?php echo urlencode($post['slug']); ?>">
+                            <a href="<?php echo $Wcms->url('?page=simplefeed&action=view&slug=' . urlencode($post['slug'])); ?>">
                                 <?php echo $Wcms->stripTags($post['title']); ?>
                             </a>
                         </h3>
@@ -56,7 +58,7 @@ $filtered = isset($tag)
                     
                     <?php if ($config['use_thumbnails'] && !empty($post['image'])): ?>
                         <div class="sf-post-thumbnail">
-                            <a href="?page=simplefeed&action=view&slug=<?php echo urlencode($post['slug']); ?>">
+                            <a href="<?php echo $Wcms->url('?page=simplefeed&action=view&slug=' . urlencode($post['slug'])); ?>">
                                 <img src="<?php echo $Wcms->stripTags($post['image']); ?>" 
                                      alt="<?php echo $Wcms->stripTags($post['title']); ?>" 
                                      loading="lazy">
@@ -74,14 +76,14 @@ $filtered = isset($tag)
                         <?php if (!empty($post['tags'])): ?>
                             <div class="sf-post-tags">
                                 <?php foreach ($post['tags'] as $t): ?>
-                                    <a href="?page=simplefeed&action=tag&tag=<?php echo urlencode($t); ?>" class="sf-tag">
+                                    <a href="<?php echo $Wcms->url('?page=simplefeed&action=tag&tag=' . urlencode($t)); ?>" class="sf-tag">
                                         <?php echo $Wcms->stripTags($t); ?>
                                     </a>
                                 <?php endforeach; ?>
                             </div>
                         <?php endif; ?>
                         
-                        <a href="?page=simplefeed&action=view&slug=<?php echo urlencode($post['slug']); ?>" class="sf-read-more">
+                        <a href="<?php echo $Wcms->url('?page=simplefeed&action=view&slug=' . urlencode($post['slug'])); ?>" class="sf-read-more">
                             Read more →
                         </a>
                     </footer>
@@ -92,16 +94,17 @@ $filtered = isset($tag)
         
         <div class="sf-feed-navigation">
             <?php if ($shown < count($filtered)): ?>
-                <a href="?page=simplefeed<?php echo isset($tag) ? '&action=tag&tag=' . urlencode($tag) : ''; ?>&shown=<?php echo $shown + $config['show_more_limit']; ?>" class="sf-button sf-show-more">
+                <a href="<?php echo $Wcms->url('?page=simplefeed' . (isset($tag) ? '&action=tag&tag=' . urlencode($tag) : '') . '&shown=' . ($shown + $config['show_more_limit'])); ?>" class="sf-button sf-show-more">
                     Show more posts
                 </a>
             <?php endif; ?>
             
             <?php if (count($posts) > $config['show_more_limit']): ?>
-                <a href="?page=simplefeed&action=archive" class="sf-button sf-archive-link">
+                <a href="<?php echo $Wcms->url('?page=simplefeed&action=archive'); ?>" class="sf-button sf-archive-link">
                     View full archive
                 </a>
             <?php endif; ?>
         </div>
     <?php endif; ?>
+</div>
 </div>
