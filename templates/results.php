@@ -59,7 +59,7 @@ if (!empty($query)) {
 <div class="sf-feed-container">
     <h2>Search Results</h2>
     
-    <?php include __DIR__ . '/search-integration.php'; ?>
+    <?php include __DIR__ . '/search.php'; ?>
     
     <?php if (empty($query)): ?>
         <div class="sf-search-initial">
