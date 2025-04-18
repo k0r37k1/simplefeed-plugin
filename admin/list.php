@@ -32,24 +32,6 @@ $filtered = isset($tag)
         <div class="sf-posts-list">
             <?php foreach (array_slice($filtered, 0, $shown) as $post): ?>
                 <article class="sf-post">
-                    <header class="sf-post-header">
-                        <h3 class="sf-post-title">
-                            <a href="<?php echo $Wcms->url('?page=simplefeed&action=post&slug=' . urlencode($post['slug'])); ?>">
-                                <?php echo $Wcms->stripTags($post['title']); ?>
-                            </a>
-                        </h3>
-
-                        <div class="sf-post-meta">
-                            <?php if (!empty($post['author'])): ?>
-                                <span class="sf-post-author"><?php echo $Wcms->stripTags($post['author']); ?></span>
-                            <?php endif; ?>
-
-                            <span class="sf-post-date">
-                                <?php echo date($config['date_format'], strtotime($post['date'])); ?>
-                            </span>
-                        </div>
-                    </header>
-
                     <?php if ($config['use_thumbnails'] && !empty($post['image'])): ?>
                         <div class="sf-post-thumbnail">
                             <a href="<?php echo $Wcms->url('?page=simplefeed&action=post&slug=' . urlencode($post['slug'])); ?>">
@@ -60,27 +42,47 @@ $filtered = isset($tag)
                         </div>
                     <?php endif; ?>
 
-                    <?php if (!empty($post['short'])): ?>
-                        <div class="sf-post-excerpt">
-                            <?php echo $Wcms->stripTags($post['short']); ?>
-                        </div>
-                    <?php endif; ?>
+                    <div class="sf-post-content-wrapper">
+                        <header class="sf-post-header">
+                            <h3 class="sf-post-title">
+                                <a href="<?php echo $Wcms->url('?page=simplefeed&action=post&slug=' . urlencode($post['slug'])); ?>">
+                                    <?php echo $Wcms->stripTags($post['title']); ?>
+                                </a>
+                            </h3>
 
-                    <footer class="sf-post-footer">
-                        <?php if (!empty($post['tags'])): ?>
-                            <div class="sf-post-tags">
-                                <?php foreach ($post['tags'] as $t): ?>
-                                    <a href="<?php echo $Wcms->url('?page=simplefeed&action=tag&tag=' . urlencode($t)); ?>" class="sf-tag">
-                                        <?php echo $Wcms->stripTags($t); ?>
-                                    </a>
-                                <?php endforeach; ?>
+                            <div class="sf-post-meta">
+                                <?php if (!empty($post['author'])): ?>
+                                    <span class="sf-post-author"><?php echo $Wcms->stripTags($post['author']); ?></span>
+                                <?php endif; ?>
+
+                                <span class="sf-post-date">
+                                    <?php echo date($config['date_format'], strtotime($post['date'])); ?>
+                                </span>
+                            </div>
+                        </header>
+
+                        <?php if (!empty($post['short'])): ?>
+                            <div class="sf-post-excerpt">
+                                <?php echo $Wcms->stripTags($post['short']); ?>
                             </div>
                         <?php endif; ?>
 
-                        <a href="<?php echo $Wcms->url('?page=simplefeed&action=post&slug=' . urlencode($post['slug'])); ?>" class="sf-read-more">
-                            Read more →
-                        </a>
-                    </footer>
+                        <footer class="sf-post-footer">
+                            <?php if (!empty($post['tags'])): ?>
+                                <div class="sf-post-tags">
+                                    <?php foreach ($post['tags'] as $t): ?>
+                                        <a href="<?php echo $Wcms->url('?page=simplefeed&action=tag&tag=' . urlencode($t)); ?>" class="sf-tag">
+                                            <?php echo $Wcms->stripTags($t); ?>
+                                        </a>
+                                    <?php endforeach; ?>
+                                </div>
+                            <?php endif; ?>
+
+                            <a href="<?php echo $Wcms->url('?page=simplefeed&action=post&slug=' . urlencode($post['slug'])); ?>" class="sf-read-more">
+                                Read more →
+                            </a>
+                        </footer>
+                    </div>
                 </article>
                 <hr class="sf-post-divider">
             <?php endforeach; ?>
