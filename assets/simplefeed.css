@@ -1,57 +1,99 @@
 /* SimpleFeed Plugin for WonderCMS
  * Main styling for all SimpleFeed components
+ * Improved with better organization, feedback messages, and search integration
  */
+
+/* ------ Variables ------ */
+:root {
+    --sf-primary-color: #4a89dc;
+    --sf-secondary-color: #f0f0f0;
+    --sf-danger-color: #d9534f;
+    --sf-success-color: #5cb85c;
+    --sf-info-color: #5bc0de;
+    --sf-warning-color: #f0ad4e;
+    --sf-border-color: #ddd;
+    --sf-text-color: #333;
+    --sf-text-muted: #777;
+    --sf-transition: 0.3s;
+}
 
 /* ------ General Styles ------ */
 .sf-button {
     display: inline-block;
     padding: 8px 16px;
-    background-color: #f0f0f0;
-    color: #333;
+    background-color: var(--sf-secondary-color);
+    color: var(--sf-text-color);
     text-decoration: none;
     border-radius: 4px;
-    transition: background-color 0.3s;
+    transition: background-color var(--sf-transition);
 }
 
 .sf-button:hover {
     background-color: #e0e0e0;
 }
 
-.btn-primary {
+.btn-primary, .wbtn-primary {
     display: inline-block;
     padding: 8px 16px;
-    background-color: #4a89dc;
+    background-color: var(--sf-primary-color);
     color: white;
     border: none;
     border-radius: 4px;
     cursor: pointer;
     font-size: 14px;
-    transition: background-color 0.3s;
+    transition: background-color var(--sf-transition);
 }
 
-.btn-primary:hover {
+.btn-primary:hover, .wbtn-primary:hover {
     background-color: #3a79cc;
 }
 
-.btn-secondary {
+.btn-secondary, .wbtn-secondary {
     display: inline-block;
     padding: 8px 16px;
-    background-color: #f0f0f0;
-    color: #333;
+    background-color: var(--sf-secondary-color);
+    color: var(--sf-text-color);
     text-decoration: none;
-    border: 1px solid #ddd;
+    border: 1px solid var(--sf-border-color);
     border-radius: 4px;
     cursor: pointer;
     font-size: 14px;
-    transition: background-color 0.3s;
+    transition: background-color var(--sf-transition);
 }
 
-.btn-secondary:hover {
+.btn-secondary:hover, .wbtn-secondary:hover {
     background-color: #e0e0e0;
 }
 
+.btn-danger, .wbtn-danger {
+    background-color: var(--sf-danger-color);
+    color: white;
+}
+
+.btn-danger:hover, .wbtn-danger:hover {
+    background-color: #c9302c;
+}
+
+.btn-success, .wbtn-success {
+    background-color: var(--sf-success-color);
+    color: white;
+}
+
+.btn-success:hover, .wbtn-success:hover {
+    background-color: #4cae4c;
+}
+
+.btn-info, .wbtn-info {
+    background-color: var(--sf-info-color);
+    color: white;
+}
+
+.btn-info:hover, .wbtn-info:hover {
+    background-color: #46b8da;
+}
+
 .btn-delete {
-    color: #d9534f;
+    color: var(--sf-danger-color);
 }
 
 .btn-delete:hover {
@@ -59,23 +101,56 @@
 }
 
 .btn-edit {
-    color: #4a89dc;
+    color: var(--sf-primary-color);
 }
 
 .btn-preview {
     display: inline-block;
     padding: 8px 16px;
-    background-color: #5cb85c;
+    background-color: var(--sf-success-color);
     color: white;
     border: none;
     border-radius: 4px;
     cursor: pointer;
     font-size: 14px;
-    transition: background-color 0.3s;
+    transition: background-color var(--sf-transition);
 }
 
 .btn-preview:hover {
     background-color: #4cae4c;
+}
+
+/* ------ Feedback Messages ------ */
+.sf-feedback-message {
+    padding: 15px;
+    margin-bottom: 20px;
+    border-radius: 4px;
+    opacity: 1;
+    transition: opacity 0.5s ease;
+}
+
+.sf-feedback-message.success {
+    background-color: #dff0d8;
+    border: 1px solid #d6e9c6;
+    color: #3c763d;
+}
+
+.sf-feedback-message.danger {
+    background-color: #f2dede;
+    border: 1px solid #ebccd1;
+    color: #a94442;
+}
+
+.sf-feedback-message.warning {
+    background-color: #fcf8e3;
+    border: 1px solid #faebcc;
+    color: #8a6d3b;
+}
+
+.sf-feedback-message.info {
+    background-color: #d9edf7;
+    border: 1px solid #bce8f1;
+    color: #31708f;
 }
 
 .success {
@@ -87,7 +162,7 @@
     color: #3c763d;
 }
 
-.error {
+.error, .danger {
     padding: 15px;
     margin-bottom: 20px;
     background-color: #f2dede;
@@ -98,12 +173,12 @@
 
 .help {
     font-size: 12px;
-    color: #777;
+    color: var(--sf-text-muted);
     margin-top: 4px;
 }
 
 .required {
-    color: #d9534f;
+    color: var(--sf-danger-color);
     margin-left: 5px;
 }
 
@@ -131,7 +206,7 @@
 .form-group textarea {
     width: 100%;
     padding: 8px;
-    border: 1px solid #ddd;
+    border: 1px solid var(--sf-border-color);
     border-radius: 4px;
     font-size: 14px;
 }
@@ -174,7 +249,7 @@
 
 .markdown-cheatsheet td {
     padding: 8px;
-    border: 1px solid #ddd;
+    border: 1px solid var(--sf-border-color);
     vertical-align: top;
 }
 
@@ -269,7 +344,7 @@
 }
 
 .sf-post-title a {
-    color: #333;
+    color: var(--sf-text-color);
     text-decoration: none;
 }
 
@@ -279,7 +354,7 @@
 
 .sf-post-meta {
     font-size: 14px;
-    color: #777;
+    color: var(--sf-text-muted);
     margin-bottom: 15px;
     display: flex;
     gap: 15px;
@@ -306,7 +381,7 @@
 .sf-tag {
     display: inline-block;
     padding: 2px 8px;
-    background-color: #f0f0f0;
+    background-color: var(--sf-secondary-color);
     border-radius: 16px;
     margin-right: 5px;
     margin-bottom: 5px;
@@ -325,13 +400,13 @@
 }
 
 .sf-tag-active {
-    background-color: #4a89dc;
+    background-color: var(--sf-primary-color);
     color: white;
 }
 
 .sf-read-more {
     display: inline-block;
-    color: #4a89dc;
+    color: var(--sf-primary-color);
     text-decoration: none;
 }
 
@@ -449,7 +524,7 @@
 
 .sf-post-content th,
 .sf-post-content td {
-    border: 1px solid #ddd;
+    border: 1px solid var(--sf-border-color);
     padding: 8px;
 }
 
@@ -466,7 +541,7 @@
 .sf-post-format-badge {
     display: inline-block;
     padding: 3px 8px;
-    background-color: #f0f0f0;
+    background-color: var(--sf-secondary-color);
     border-radius: 16px;
     font-size: 12px;
     color: #555;
@@ -497,11 +572,11 @@
 
 .sf-post-prev a:hover,
 .sf-post-next a:hover {
-    color: #333;
+    color: var(--sf-text-color);
 }
 
 .nav-arrow {
-    color: #4a89dc;
+    color: var(--sf-primary-color);
 }
 
 .sf-back-to-feed {
@@ -535,14 +610,14 @@
 
 .sf-archive-date {
     min-width: 100px;
-    color: #777;
+    color: var(--sf-text-muted);
     font-size: 14px;
 }
 
 .sf-archive-title {
     flex: 1;
     margin: 0 15px;
-    color: #333;
+    color: var(--sf-text-color);
     text-decoration: none;
 }
 
@@ -559,46 +634,9 @@
     text-align: center;
 }
 
-/* ------ Responsive Styles ------ */
-@media (max-width: 768px) {
-    .sf-post-navigation {
-        flex-direction: column;
-        gap: 15px;
-    }
-
-    .sf-post-prev,
-    .sf-post-next {
-        max-width: 100%;
-    }
-
-    .sf-archive-item {
-        flex-direction: column;
-        align-items: flex-start;
-        gap: 8px;
-    }
-
-    .sf-archive-date {
-        min-width: auto;
-    }
-
-    .sf-archive-title {
-        margin: 0;
-    }
-
-    .sf-archive-tags {
-        margin-left: 0;
-    }
-
-    .sf-feed-navigation {
-        flex-direction: column;
-        gap: 15px;
-        align-items: center;
-    }
-}
-
-/* ------ Additional Styles for Field Errors ------ */
+/* ------ Field Error Styles ------ */
 .field-error {
-    color: #d9534f;
+    color: var(--sf-danger-color);
     font-size: 12px;
     margin-top: 5px;
 }
@@ -606,7 +644,7 @@
 input.error,
 textarea.error,
 select.error {
-    border-color: #d9534f;
+    border-color: var(--sf-danger-color);
 }
 
 /* ------ Image Preview Styles ------ */
@@ -617,63 +655,7 @@ select.error {
 .image-preview img {
     max-width: 200px;
     max-height: 150px;
-    border: 1px solid #ddd;
+    border: 1px solid var(--sf-border-color);
     border-radius: 4px;
     padding: 3px;
-}
-
-/* ------ Empty States ------ */
-.sf-empty-feed,
-.sf-empty-archive,
-.sf-info-box {
-    padding: 20px;
-    background-color: #f9f9f9;
-    border: 1px solid #eee;
-    border-radius: 4px;
-    margin-bottom: 20px;
-    text-align: center;
-}
-
-/* Modified post layout for list view */
-.sf-post {
-    margin-bottom: 30px;
-    display: flex;
-    flex-wrap: wrap;
-    gap: 20px;
-}
-
-/* Style for the left column (thumbnail) */
-.sf-post-thumbnail {
-    flex: 0 0 160px; /* Fixed width */
-    margin-bottom: 0; /* Remove bottom margin */
-}
-
-.sf-post-thumbnail img {
-    width: 160px;
-    height: 160px;
-    object-fit: cover; /* Ensures the image covers the area without distortion */
-    border-radius: 4px;
-}
-
-/* Style for the right column (content) */
-.sf-post-content-wrapper {
-    flex: 1;
-    min-width: 250px; /* Minimum width for readability */
-}
-
-/* Responsive adjustments */
-@media (max-width: 576px) {
-    .sf-post {
-        flex-direction: column;
-    }
-    
-    .sf-post-thumbnail {
-        flex: 0 0 100%;
-    }
-    
-    .sf-post-thumbnail img {
-        width: 100%;
-        height: auto;
-        max-height: 160px;
-    }
 }
