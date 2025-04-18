@@ -633,3 +633,47 @@ select.error {
     margin-bottom: 20px;
     text-align: center;
 }
+
+/* Modified post layout for list view */
+.sf-post {
+    margin-bottom: 30px;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 20px;
+}
+
+/* Style for the left column (thumbnail) */
+.sf-post-thumbnail {
+    flex: 0 0 160px; /* Fixed width */
+    margin-bottom: 0; /* Remove bottom margin */
+}
+
+.sf-post-thumbnail img {
+    width: 160px;
+    height: 160px;
+    object-fit: cover; /* Ensures the image covers the area without distortion */
+    border-radius: 4px;
+}
+
+/* Style for the right column (content) */
+.sf-post-content-wrapper {
+    flex: 1;
+    min-width: 250px; /* Minimum width for readability */
+}
+
+/* Responsive adjustments */
+@media (max-width: 576px) {
+    .sf-post {
+        flex-direction: column;
+    }
+    
+    .sf-post-thumbnail {
+        flex: 0 0 100%;
+    }
+    
+    .sf-post-thumbnail img {
+        width: 100%;
+        height: auto;
+        max-height: 160px;
+    }
+}
