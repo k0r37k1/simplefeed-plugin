@@ -36,7 +36,7 @@ krsort($postsByYear);
                                     <?php echo date($config['date_format'], strtotime($post['date'])); ?>
                                 </span>
 
-                                <a href="<?php echo $Wcms->url('?page=simplefeed&action=view&slug=' . urlencode($post['slug'])); ?>" class="sf-archive-title">
+                                <a href="<?php echo $Wcms->url('?page=simplefeed&action=post&slug=' . urlencode($post['slug'])); ?>" class="sf-archive-title">
                                     <?php echo $Wcms->stripTags($post['title']); ?>
                                 </a>
 
