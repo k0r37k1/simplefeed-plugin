@@ -11,6 +11,7 @@ A minimalist feed/blog plugin with tags and navigation for WonderCMS.
 - Admin panel integration
 - Image thumbnails
 - Archive view
+- Integrated search functionality
 
 ## Directory Structure
 
@@ -34,7 +35,9 @@ simplefeed/
 ├── templates/          # Frontend templates
 │   ├── list.php        # Feed list view
 │   ├── post.php        # Single post view
-│   └── archive.php     # Archive view
+│   ├── archive.php     # Archive view
+│   ├── search.php      # Search form
+│   └── results.php     # Search results view
 ├── config.php          # Default configuration 
 ├── README.md           # This file
 ├── INSTALL.md          # Installation guide
@@ -60,6 +63,8 @@ SimpleFeed includes built-in Markdown support using the Parsedown library. To en
 2. Create a `lib` directory inside the SimpleFeed plugin directory (if it doesn't exist)
 3. Place the Parsedown.php file in the `lib` directory
 
+Even without Parsedown.php, SimpleFeed provides basic Markdown functionality.
+
 ## Usage
 
 ### Creating Posts
@@ -83,6 +88,17 @@ SimpleFeed includes built-in Markdown support using the Parsedown library. To en
 - Single post view: Displays the full content of a post
 - Tag filter: Shows posts with a specific tag
 - Archive: Displays all posts organized by year
+- Search: Find posts with specific keywords
+
+### Search Integration
+
+To add a search box to your theme, include the following code in your theme template:
+
+```php
+<?php include __DIR__ . '/plugins/simplefeed/templates/search.php'; ?>
+```
+
+This will display a search form that allows visitors to search for content in your posts.
 
 ## Configuration
 
@@ -96,7 +112,7 @@ You can configure the following settings:
 ## Requirements
 
 - WonderCMS 3.0.0 or newer
-- PHP 7.4 or newer
+- PHP 7.2 or newer
 
 ## License
 
