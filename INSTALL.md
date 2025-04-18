@@ -42,9 +42,8 @@ SimpleFeed requires the Parsedown library for Markdown support:
        └── simplefeed/
            ├── admin/
            ├── core/
-           ├── css/
+           ├── assets/
            ├── data/
-           ├── js/
            ├── lib/
            │   └── Parsedown.php
            ├── templates/
@@ -87,6 +86,10 @@ If you encounter issues:
 3. **Plugin doesn't appear**
    - Check that all files are correctly uploaded
    - Verify that your WonderCMS version is compatible
+
+4. **Links not working correctly**
+   - Make sure your .htaccess file is properly configured for WonderCMS
+   - Try using the plugin with default WonderCMS URL settings
 
 ## Updating
 
