@@ -8,6 +8,8 @@ global $Wcms;
 
 /**
  * Load Parsedown library if needed
+ * 
+ * @return bool True if Parsedown is available, false otherwise
  */
 function sf_loadParsedown() {
     global $Wcms;
@@ -26,7 +28,7 @@ function sf_loadParsedown() {
             require_once $parsedownPath;
         } else {
             if (method_exists($Wcms, 'log')) {
-                $Wcms->log('SimpleFeed: Parsedown library not found', 'danger');
+                $Wcms->log('SimpleFeed: Parsedown library not found', 'warning');
             }
             return false;
         }
@@ -37,6 +39,7 @@ function sf_loadParsedown() {
 
 /**
  * Convert Markdown to HTML using Parsedown
+ * Provides basic fallback conversion if Parsedown is not available
  *
  * @param string $markdown The Markdown text
  * @return string The generated HTML
@@ -48,7 +51,20 @@ function sf_parseMarkdown(string $markdown): string {
         if (method_exists($Wcms, 'log')) {
             $Wcms->log('SimpleFeed: Failed to parse Markdown - Parsedown library not available', 'warning');
         }
-        return $Wcms->purify($markdown); // Fallback to just purifying the input
+        
+        // Basic fallback conversion if Parsedown is not available
+        $html = preg_replace('/\*\*(.*?)\*\*/s', '<strong>$1</strong>', $markdown); // Bold
+        $html = preg_replace('/\*(.*?)\*/s', '<em>$1</em>', $html); // Italic
+        $html = preg_replace('/\[([^\]]+)\]\(([^)]+)\)/s', '<a href="$2">$1</a>', $html); // Links
+        $html = preg_replace('/^# (.*?)$/m', '<h1>$1</h1>', $html); // H1
+        $html = preg_replace('/^## (.*?)$/m', '<h2>$1</h2>', $html); // H2
+        $html = preg_replace('/^### (.*?)$/m', '<h3>$1</h3>', $html); // H3
+        $html = preg_replace('/^- (.*?)$/m', '<li>$1</li>', $html); // List items
+        $html = preg_replace('/\n\n/s', '</p><p>', $html); // Paragraphs
+        $html = '<p>' . $html . '</p>'; // Wrap in paragraphs
+        
+        // Final sanitization
+        return $Wcms->purify($html);
     }
 
     static $parser = null;
@@ -100,11 +116,15 @@ function sf_isMarkdown(string $text): bool {
 }
 
 /**
- * Auto-detect whether content is Markdown and convert accordingly
+ * Process content based on format (Markdown or HTML)
+ * 
+ * This function detects or uses the specified format to process content.
+ * For Markdown content, it uses Parsedown to convert to HTML.
+ * For HTML content, it ensures proper sanitization.
  *
- * @param string $content The text content
- * @param bool $isMarkdown Optional: Explicitly treat as Markdown
- * @return string Converted content
+ * @param string $content The text content to process
+ * @param bool|null $isMarkdown Optional: Explicitly treat as Markdown
+ * @return string Processed and sanitized HTML content
  */
 function sf_processContent(string $content, bool $isMarkdown = null): string {
     global $Wcms;
