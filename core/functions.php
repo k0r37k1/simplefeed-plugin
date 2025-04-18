@@ -3,6 +3,24 @@ defined('INC_ROOT') || die;
 global $Wcms;
 
 /**
+ * Get plugin directory path
+ *
+ * @return string Plugin directory path
+ */
+function sf_getPluginPath(): string {
+    return __DIR__ . '/..';
+}
+
+/**
+ * Get plugin data directory path
+ *
+ * @return string Plugin data directory path
+ */
+function sf_getDataPath(): string {
+    return sf_getPluginPath() . '/data';
+}
+
+/**
  * Generate URL-friendly slug from title.
  * Supports non-latin characters through transliteration.
  *
@@ -44,7 +62,7 @@ function sf_transliterateName($str) {
  */
 function sf_loadPosts(): array {
     global $Wcms;
-    $dataPath = __DIR__ . '/../data';
+    $dataPath = sf_getDataPath();
 
     // Create data directory if it doesn't exist
     if (!is_dir($dataPath)) {
@@ -74,7 +92,7 @@ function sf_loadPosts(): array {
         }
 
         // Read file securely
-        $content = @file_get_contents($f);
+        $content = sf_safeReadFile($f);
         if (!$content) continue;
 
         // Parse JSON
@@ -132,7 +150,7 @@ function sf_safeReadFile(string $path, bool $json = false) {
     }
 
     // Verify path is inside plugin directory (prevent path traversal)
-    $pluginPath = realpath(__DIR__ . '/..');
+    $pluginPath = realpath(sf_getPluginPath());
     $realPath = realpath($path);
 
     if (!$realPath || strpos($realPath, $pluginPath) !== 0) {
@@ -179,7 +197,7 @@ function sf_safeWriteFile(string $path, $data): bool {
     }
 
     // Verify path is inside plugin directory (prevent path traversal)
-    $pluginPath = realpath(__DIR__ . '/..');
+    $pluginPath = realpath(sf_getPluginPath());
     $realDir = realpath($dir);
 
     if (!$realDir || strpos($realDir, $pluginPath) !== 0) {
@@ -204,6 +222,9 @@ function sf_safeWriteFile(string $path, $data): bool {
         }
         return false;
     }
+
+    return true;
+}
 
     return true;
 }
