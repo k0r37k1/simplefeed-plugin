@@ -103,9 +103,7 @@ function sf_loadPosts(): array {
     }
 
     // Sort by date (descending)
-    usort($posts, function($a, $b) {
-        return strtotime($b['date'] ?? 'now') - strtotime($a['date'] ?? 'now');
-    });
+    usort($posts, fn($a,$b) => strtotime($b['date'] ?? 'now') - strtotime($a['date'] ?? 'now'));
     return $posts;
 }
 
@@ -217,13 +215,16 @@ function sf_safeWriteFile(string $path, $data): bool {
     }
 
     // Write file
-    $result = @file_put_contents($path, $content, LOCK_EX);
+    $result = @file_put_contents($path, $content);
     if ($result === false) {
         if (method_exists($Wcms, 'log')) {
             $Wcms->log('SimpleFeed: Failed to write file: ' . basename($path), 'danger');
         }
         return false;
     }
+
+    return true;
+}
 
     return true;
 }
