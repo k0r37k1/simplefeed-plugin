@@ -40,7 +40,7 @@ $filtered = isset($tag)
                 <article class="sf-post">
                     <header class="sf-post-header">
                         <h3 class="sf-post-title">
-                            <a href="<?php echo $Wcms->url('?page=simplefeed&action=view&slug=' . urlencode($post['slug'])); ?>">
+                            <a href="<?php echo $Wcms->url('?page=simplefeed&action=post&slug=' . urlencode($post['slug'])); ?>">
                                 <?php echo $Wcms->stripTags($post['title']); ?>
                             </a>
                         </h3>
@@ -58,7 +58,7 @@ $filtered = isset($tag)
                     
                     <?php if ($config['use_thumbnails'] && !empty($post['image'])): ?>
                         <div class="sf-post-thumbnail">
-                            <a href="<?php echo $Wcms->url('?page=simplefeed&action=view&slug=' . urlencode($post['slug'])); ?>">
+                            <a href="<?php echo $Wcms->url('?page=simplefeed&action=post&slug=' . urlencode($post['slug'])); ?>">
                                 <img src="<?php echo $Wcms->stripTags($post['image']); ?>" 
                                      alt="<?php echo $Wcms->stripTags($post['title']); ?>" 
                                      loading="lazy">
@@ -83,7 +83,7 @@ $filtered = isset($tag)
                             </div>
                         <?php endif; ?>
                         
-                        <a href="<?php echo $Wcms->url('?page=simplefeed&action=view&slug=' . urlencode($post['slug'])); ?>" class="sf-read-more">
+                        <a href="<?php echo $Wcms->url('?page=simplefeed&action=post&slug=' . urlencode($post['slug'])); ?>" class="sf-read-more">
                             Read more →
                         </a>
                     </footer>
@@ -106,5 +106,4 @@ $filtered = isset($tag)
             <?php endif; ?>
         </div>
     <?php endif; ?>
-</div>
 </div>
