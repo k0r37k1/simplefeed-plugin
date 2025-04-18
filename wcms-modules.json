@@ -4,7 +4,7 @@
     "simplefeed": {
       "name": "SimpleFeed",
       "repo": "https://github.com/k0r37k1/simplefeed-plugin",
-      "zip": "https://github.com/k0r37k1/simplefeed-plugin/archive/master.zip",
+      "zip": "https://github.com/k0r37k1/simplefeed-plugin/...",
       "version": "1.0",
       "summary": "Minimalistisches Feed/Blog‑Plugin für WonderCMS"
     }
