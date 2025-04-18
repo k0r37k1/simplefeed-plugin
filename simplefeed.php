@@ -5,7 +5,9 @@
  * A minimalist feed/blog plugin with tags and navigation for WonderCMS.
  * With integrated Markdown support and security features.
  *
- * @version 1.1.0
+ * @package WonderCMS
+ * @subpackage SimpleFeed
+ * @version 1.1.1
  * @author k0r37k1
  * @license MIT
  */
@@ -25,7 +27,7 @@ try {
     $dataDir = sf_getDataPath();
     if (!is_dir($dataDir)) {
         if (!mkdir($dataDir, 0755, true)) {
-            throw new Exception('Failed to create data directory');
+            throw new Exception('Failed to create data directory: ' . $dataDir);
         }
     }
 
@@ -33,14 +35,14 @@ try {
     $libDir = __DIR__ . '/lib';
     if (!is_dir($libDir)) {
         if (!mkdir($libDir, 0755, true)) {
-            throw new Exception('Failed to create lib directory');
+            throw new Exception('Failed to create lib directory: ' . $libDir);
         }
     }
 
     // Check if Parsedown is available, if not show warning
     if (!file_exists(__DIR__ . '/lib/Parsedown.php')) {
         if ($Wcms->loggedIn) {
-            $Wcms->alert('Parsedown library not found. Markdown features will not work correctly. Please download Parsedown.php and place it in the lib directory.', 'warning');
+            $Wcms->alert('Parsedown library not found. Markdown features will not work correctly. <a href="https://github.com/erusev/parsedown/raw/master/Parsedown.php" target="_blank">Click here to download Parsedown.php</a> and place it in the lib directory.', 'warning');
         }
     }
 
@@ -70,6 +72,40 @@ try {
     $Wcms->addListener('js', function(array $js) use ($Wcms) {
         $js[] = $Wcms->url('plugins/simplefeed/assets/simplefeed.js');
         return $js;
+    });
+
+    // Add search integration
+    $Wcms->addListener('search', function(array $args) use ($Wcms, $config) {
+        // Get all posts
+        $posts = sf_loadPosts();
+        $searchResults = [];
+        
+        // Search all posts for the query
+        $query = isset($_POST['query']) ? trim(htmlspecialchars($_POST['query'])) : '';
+        if (!empty($query) && !empty($posts)) {
+            foreach ($posts as $post) {
+                // Search in title, content and tags
+                $title = $post['title'] ?? '';
+                $content = $post['content'] ?? '';
+                $tags = implode(' ', $post['tags'] ?? []);
+                $searchText = $title . ' ' . strip_tags($content) . ' ' . $tags;
+                
+                if (stripos($searchText, $query) !== false) {
+                    // Create excerpt
+                    $excerpt = sf_createExcerpt($content, $query);
+                    
+                    // Add to search results
+                    $searchResults[] = [
+                        'title' => $title,
+                        'excerpt' => $excerpt,
+                        'url' => $Wcms->url('?page=simplefeed&action=post&slug=' . urlencode($post['slug']))
+                    ];
+                }
+            }
+        }
+        
+        $args[] = $searchResults;
+        return $args;
     });
 
     // Page listener for routing all simplefeed pages
@@ -114,10 +150,14 @@ try {
                 $settingsPath = sf_getDataPath() . '/settings.json';
                 if (sf_safeWriteFile($settingsPath, $cfg)) {
                     $Wcms->alert('Settings saved successfully.', 'success');
-                    $Wcms->log('SimpleFeed: Settings updated', 'info');
+                    if (method_exists($Wcms, 'log')) {
+                        $Wcms->log('SimpleFeed: Settings updated', 'info');
+                    }
                 } else {
                     $Wcms->alert('Failed to save settings.', 'danger');
-                    $Wcms->log('SimpleFeed: Failed to save settings', 'danger');
+                    if (method_exists($Wcms, 'log')) {
+                        $Wcms->log('SimpleFeed: Failed to save settings', 'danger');
+                    }
                 }
             }
         }
@@ -140,7 +180,9 @@ try {
                     'image' => $Wcms->stripTags($_POST['image']),
                     'author' => $Wcms->stripTags($_POST['author']),
                     'content' => $_POST['content'], // Content will be processed based on Markdown setting
-                    'tags' => array_filter(array_map([$Wcms, 'stripTags'], array_map('trim', explode(',', $_POST['tags'])))),
+                    'tags' => array_filter(array_map(function($tag) use ($Wcms) {
+                        return $Wcms->stripTags(trim($tag));
+                    }, explode(',', $_POST['tags']))),
                     'use_markdown' => (isset($_POST['use_markdown']) && $_POST['use_markdown'] == '1')
                 ];
 
@@ -168,15 +210,30 @@ try {
                     } else {
                         // New post - generate slug from title
                         $slug = sf_generateSlug($postData['title']);
+                        
+                        // Check if slug already exists and make it unique if needed
+                        $existingPosts = sf_loadPosts();
+                        $postSlugs = array_column($existingPosts, 'slug');
+                        if (in_array($slug, $postSlugs)) {
+                            $counter = 1;
+                            $originalSlug = $slug;
+                            while (in_array($slug, $postSlugs)) {
+                                $slug = $originalSlug . '-' . $counter++;
+                            }
+                        }
                     }
 
                     $postData['slug'] = $slug;
+                    $postData['created'] = $postData['created'] ?? date('c');
+                    $postData['modified'] = date('c');
 
                     // Save the file
                     $file = sf_getDataPath() . '/' . basename($slug) . '.json';
                     if (sf_safeWriteFile($file, $postData)) {
                         $Wcms->alert('Post saved successfully.', 'success');
-                        $Wcms->log('SimpleFeed: Post saved - ' . $slug, 'info');
+                        if (method_exists($Wcms, 'log')) {
+                            $Wcms->log('SimpleFeed: Post saved - ' . $slug, 'info');
+                        }
 
                         // Redirect to list view
                         if (!headers_sent()) {
@@ -188,7 +245,9 @@ try {
                         }
                     } else {
                         $Wcms->alert('Error saving post.', 'danger');
-                        $Wcms->log('SimpleFeed: Failed to save post - ' . $slug, 'danger');
+                        if (method_exists($Wcms, 'log')) {
+                            $Wcms->log('SimpleFeed: Failed to save post - ' . $slug, 'danger');
+                        }
                     }
                 }
             }
@@ -220,7 +279,9 @@ try {
                     if ($realFile && strpos($realFile, $dataPath) === 0) {
                         if (unlink($file)) {
                             $Wcms->alert('Post deleted successfully.', 'success');
-                            $Wcms->log('SimpleFeed: Post deleted - ' . $slug, 'info');
+                            if (method_exists($Wcms, 'log')) {
+                                $Wcms->log('SimpleFeed: Post deleted - ' . $slug, 'info');
+                            }
 
                             // Redirect to list view
                             if (!headers_sent()) {
@@ -232,11 +293,15 @@ try {
                             }
                         } else {
                             $Wcms->alert('Error deleting post.', 'danger');
-                            $Wcms->log('SimpleFeed: Failed to delete post - ' . $slug, 'danger');
+                            if (method_exists($Wcms, 'log')) {
+                                $Wcms->log('SimpleFeed: Failed to delete post - ' . $slug, 'danger');
+                            }
                         }
                     } else {
                         $Wcms->alert('Security error: Invalid file path.', 'danger');
-                        $Wcms->log('SimpleFeed: Security warning - attempted to delete file outside data directory', 'danger');
+                        if (method_exists($Wcms, 'log')) {
+                            $Wcms->log('SimpleFeed: Security warning - attempted to delete file outside data directory', 'danger');
+                        }
                     }
                 }
             }
@@ -363,4 +428,45 @@ try {
     } else {
         echo '<div class="alert alert-danger">SimpleFeed Plugin Error: ' . $Wcms->stripTags($e->getMessage()) . '</div>';
     }
+}
+
+/**
+ * Create an excerpt of content with the query highlighted
+ * 
+ * @param string $content The content to create an excerpt from
+ * @param string $query The search query to highlight
+ * @param int $length The maximum length of the excerpt
+ * @return string The formatted excerpt
+ */
+function sf_createExcerpt($content, $query, $length = 150) {
+    // Strip HTML tags
+    $content = strip_tags($content);
+    
+    // Find position of query
+    $pos = stripos($content, $query);
+    
+    if ($pos !== false) {
+        // Calculate start position for context
+        $start = max(0, $pos - 60);
+        
+        // Get excerpt
+        $excerpt = substr($content, $start, $length);
+        
+        // Add ellipsis if needed
+        if ($start > 0) {
+            $excerpt = '...' . $excerpt;
+        }
+        
+        if (strlen($content) > $start + $length) {
+            $excerpt .= '...';
+        }
+        
+        // Highlight the query
+        $excerpt = preg_replace('/(' . preg_quote($query, '/') . ')/i', '<strong>$1</strong>', $excerpt);
+        
+        return $excerpt;
+    }
+    
+    // If query not found, return first part of content
+    return substr($content, 0, $length) . (strlen($content) > $length ? '...' : '');
 }
