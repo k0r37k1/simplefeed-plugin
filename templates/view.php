@@ -34,7 +34,7 @@ foreach ($posts as $i => $p) {
                 <div class="sf-post-tags">
                     Tags:
                     <?php foreach ($post['tags'] as $tag): ?>
-                        <a href="?page=simplefeed&action=tag&tag=<?php echo urlencode($tag); ?>" class="sf-tag">
+                        <a href="<?php echo $Wcms->url('?page=simplefeed&action=tag&tag=' . urlencode($tag)); ?>" class="sf-tag">
                             <?php echo $Wcms->stripTags($tag); ?>
                         </a>
                     <?php endforeach; ?>
@@ -69,7 +69,7 @@ foreach ($posts as $i => $p) {
         <div class="sf-post-navigation">
             <?php if ($prev): ?>
                 <div class="sf-post-prev">
-                    <a href="?page=simplefeed&action=view&slug=<?php echo urlencode($prev['slug']); ?>">
+                    <a href="<?php echo $Wcms->url('?page=simplefeed&action=view&slug=' . urlencode($prev['slug'])); ?>">
                         <span class="nav-arrow">←</span>
                         <span class="nav-title"><?php echo $Wcms->stripTags($prev['title']); ?></span>
                     </a>
@@ -78,7 +78,7 @@ foreach ($posts as $i => $p) {
 
             <?php if ($next): ?>
                 <div class="sf-post-next">
-                    <a href="?page=simplefeed&action=view&slug=<?php echo urlencode($next['slug']); ?>">
+                    <a href="<?php echo $Wcms->url('?page=simplefeed&action=view&slug=' . urlencode($next['slug'])); ?>">
                         <span class="nav-title"><?php echo $Wcms->stripTags($next['title']); ?></span>
                         <span class="nav-arrow">→</span>
                     </a>
@@ -87,7 +87,7 @@ foreach ($posts as $i => $p) {
         </div>
 
         <div class="sf-back-to-feed">
-            <a href="?page=simplefeed">Back to Feed</a>
+            <a href="<?php echo $Wcms->url('?page=simplefeed'); ?>">Back to Feed</a>
         </div>
     </footer>
 </article>
