@@ -97,7 +97,7 @@ try {
     $Wcms->addListener('adminPanel', function(array $args) use ($Wcms) {
         // Only if admin is logged in
         if ($Wcms->loggedIn) {
-            $args[0] .= '<a href="' . $Wcms->url('?page=simplefeed') . '" class="btn btn-info marginTop5">SimpleFeed</a>';
+            $args[0] .= '<a href="' . $Wcms->url('?page=simplefeed') . '" class="sf-btn sf-btn-info marginTop5">SimpleFeed</a>';
         }
         return $args;
     });
@@ -285,10 +285,10 @@ try {
             if (!$confirm) {
                 // Using custom HTML for confirmation dialog to avoid overlay issues
                 ob_start();
-                echo "<div class='confirm-delete'>";
+                echo "<div class='sf-confirm-delete'>";
                 echo "<p>Are you sure you want to delete: <strong>" . $Wcms->stripTags($slug) . "</strong>?</p>";
-                echo "<a href='" . $Wcms->url('?page=simplefeed&action=delete&slug=' . urlencode($slug) . '&confirm=1&token=' . $Wcms->getToken()) . "' class='btn-delete'>Yes, delete</a> ";
-                echo "<a href='" . $Wcms->url('?page=simplefeed&action=list') . "' class='btn-cancel'>Cancel</a>";
+                echo "<a href='" . $Wcms->url('?page=simplefeed&action=delete&slug=' . urlencode($slug) . '&confirm=1&token=' . $Wcms->getToken()) . "' class='sf-btn sf-btn-danger'>Yes, delete</a> ";
+                echo "<a href='" . $Wcms->url('?page=simplefeed&action=list') . "' class='sf-btn sf-btn-secondary'>Cancel</a>";
                 echo "</div>";
                 $page['content'] = ob_get_clean();
                 return $page;
@@ -451,6 +451,6 @@ try {
     if (method_exists($Wcms, 'alert')) {
         $Wcms->alert('danger', 'SimpleFeed Plugin Error: ' . $Wcms->stripTags($e->getMessage()), 'danger');
     } else {
-        echo '<div class="alert alert-danger">SimpleFeed Plugin Error: ' . $Wcms->stripTags($e->getMessage()) . '</div>';
+        echo '<div class="sf-alert sf-alert-danger">SimpleFeed Plugin Error: ' . $Wcms->stripTags($e->getMessage()) . '</div>';
     }
 }
