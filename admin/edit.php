@@ -24,7 +24,7 @@ $post = $post ?? [
 <h2><?php echo $post['slug'] ? 'Edit' : 'New'; ?> Post</h2>
 
 <?php if (isset($_SESSION['feedbackMessage'])): ?>
-    <div class="sf-feedback-message <?php echo htmlspecialchars($_SESSION['feedbackType'] ?? 'success'); ?>">
+    <div class="sf-alert sf-alert-<?php echo htmlspecialchars($_SESSION['feedbackType'] ?? 'success'); ?>">
         <?php echo $_SESSION['feedbackMessage']; ?>
     </div>
     <?php unset($_SESSION['feedbackMessage'], $_SESSION['feedbackType']); ?>
@@ -35,45 +35,45 @@ $post = $post ?? [
     <input type="hidden" name="token" value="<?php echo $Wcms->getToken(); ?>">
     <input type="hidden" name="original_slug" value="<?php echo htmlspecialchars($Wcms->stripTags($post['slug'])); ?>">
 
-    <div class="form-group">
-        <label for="title">Title:<span class="required">*</span></label>
-        <input id="title" name="title" value="<?php echo htmlspecialchars($Wcms->stripTags($post['title'])); ?>" required>
-        <div class="help">The title of your post.</div>
+    <div class="sf-form-group">
+        <label for="title">Title:<span class="sf-required">*</span></label>
+        <input id="title" name="title" class="sf-form-control" value="<?php echo htmlspecialchars($Wcms->stripTags($post['title'])); ?>" required>
+        <div class="sf-help">The title of your post.</div>
     </div>
 
-    <div class="form-group">
-        <label for="date">Date:<span class="required">*</span></label>
-        <input type="date" id="date" name="date" value="<?php echo htmlspecialchars($Wcms->stripTags($post['date'])); ?>" required>
-        <div class="help">Publication date in YYYY-MM-DD format.</div>
+    <div class="sf-form-group">
+        <label for="date">Date:<span class="sf-required">*</span></label>
+        <input type="date" id="date" name="date" class="sf-form-control" value="<?php echo htmlspecialchars($Wcms->stripTags($post['date'])); ?>" required>
+        <div class="sf-help">Publication date in YYYY-MM-DD format.</div>
     </div>
 
-    <div class="form-group">
+    <div class="sf-form-group">
         <label for="short">Short Preview:</label>
-        <textarea id="short" name="short" rows="3"><?php echo htmlspecialchars($Wcms->stripTags($post['short'])); ?></textarea>
-        <div class="help">A short preview text shown in the feed list.</div>
+        <textarea id="short" name="short" class="sf-form-control" rows="3"><?php echo htmlspecialchars($Wcms->stripTags($post['short'])); ?></textarea>
+        <div class="sf-help">A short preview text shown in the feed list.</div>
     </div>
 
-    <div class="form-group">
+    <div class="sf-form-group">
         <label for="image">Image URL:</label>
-        <input id="image" name="image" value="<?php echo htmlspecialchars($Wcms->stripTags($post['image'])); ?>">
-        <div class="help">URL to an image (optional).</div>
+        <input id="image" name="image" class="sf-form-control" value="<?php echo htmlspecialchars($Wcms->stripTags($post['image'])); ?>">
+        <div class="sf-help">URL to an image (optional).</div>
     </div>
 
-    <div class="form-group">
+    <div class="sf-form-group">
         <label for="tags">Tags (comma separated):</label>
-        <input id="tags" name="tags" value="<?php echo htmlspecialchars($Wcms->stripTags(implode(',', $post['tags']))); ?>">
-        <div class="help">Enter tags separated by commas, e.g., news,update,important</div>
+        <input id="tags" name="tags" class="sf-form-control" value="<?php echo htmlspecialchars($Wcms->stripTags(implode(',', $post['tags']))); ?>">
+        <div class="sf-help">Enter tags separated by commas, e.g., news,update,important</div>
     </div>
 
-    <div class="form-group">
+    <div class="sf-form-group">
         <label for="author">Author:</label>
-        <input id="author" name="author" value="<?php echo htmlspecialchars($Wcms->stripTags($post['author'])); ?>">
-        <div class="help">The author's name.</div>
+        <input id="author" name="author" class="sf-form-control" value="<?php echo htmlspecialchars($Wcms->stripTags($post['author'])); ?>">
+        <div class="sf-help">The author's name.</div>
     </div>
 
-    <div class="form-group">
+    <div class="sf-form-group">
         <label for="content">Content:</label>
-        <div class="content-format-toggle">
+        <div class="sf-content-format-toggle">
             <label>
                 <input type="radio" name="use_markdown" value="1" <?php echo (!isset($post['use_markdown']) || $post['use_markdown']) ? 'checked' : ''; ?>>
                 Markdown
@@ -84,18 +84,18 @@ $post = $post ?? [
             </label>
         </div>
         <!-- Using htmlspecialchars for content when editing -->
-        <textarea id="content" name="content" rows="15"><?php
+        <textarea id="content" name="content" class="sf-form-control" rows="15"><?php
             // Preserve all formatting in the content when editing
             echo htmlspecialchars($post['content']);
             ?></textarea>
-        <div class="help" id="formatHelp">
+        <div class="sf-help" id="formatHelp">
             <?php if (!isset($post['use_markdown']) || $post['use_markdown']): ?>
-                <span class="markdown-help">
+                <span class="sf-markdown-help">
           <strong>Markdown formatting:</strong>
           **bold**, *italic*, [link](url), # Header, - list item, ```code```
           <a href="#" id="toggleMarkdownHelp">Show more</a>
           <div id="markdownHelpExpanded" style="display:none;">
-            <table class="markdown-cheatsheet">
+            <table class="sf-markdown-cheatsheet">
               <tr><td><strong>Headers</strong></td><td># Title<br>## Subtitle<br>### Section</td></tr>
               <tr><td><strong>Emphasis</strong></td><td>**bold** or __bold__<br>*italic* or _italic_</td></tr>
               <tr><td><strong>Lists</strong></td><td>- Item 1<br>- Item 2<br>1. First<br>2. Second</td></tr>
@@ -113,11 +113,11 @@ $post = $post ?? [
         </div>
     </div>
 
-    <div class="form-actions">
-        <button type="submit" class="btn-primary">Save Post</button>
-        <a href="?page=simplefeed&action=list" class="btn-secondary">Cancel</a>
+    <div class="sf-form-actions">
+        <button type="submit" class="sf-btn sf-btn-primary">Save Post</button>
+        <a href="?page=simplefeed&action=list" class="sf-btn sf-btn-secondary">Cancel</a>
         <?php if($post['slug']): ?>
-            <button type="button" id="previewBtn" class="btn-preview">Preview</button>
+            <button type="button" id="previewBtn" class="sf-btn sf-btn-info">Preview</button>
         <?php endif; ?>
     </div>
 </form>
