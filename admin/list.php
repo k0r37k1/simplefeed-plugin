@@ -16,7 +16,7 @@ $filtered = isset($tag)
 
 <div class="sf-feed-container">
     <?php if (isset($_SESSION['feedbackMessage'])): ?>
-        <div class="sf-feedback-message <?php echo htmlspecialchars($_SESSION['feedbackType'] ?? 'success'); ?>">
+        <div class="sf-alert sf-alert-<?php echo htmlspecialchars($_SESSION['feedbackType'] ?? 'success'); ?>">
             <?php echo $_SESSION['feedbackMessage']; ?>
         </div>
         <?php unset($_SESSION['feedbackMessage'], $_SESSION['feedbackType']); ?>
@@ -24,8 +24,8 @@ $filtered = isset($tag)
 
     <?php if (isset($tag)): ?>
         <div class="sf-tag-filter">
-            <h3>Posts tagged with: <span class="tag-name"><?php echo htmlspecialchars($Wcms->stripTags($tag)); ?></span></h3>
-            <a href="<?php echo $Wcms->url('?page=simplefeed'); ?>" class="clear-filter">Clear filter</a>
+            <h3>Posts tagged with: <span class="sf-tag-name"><?php echo htmlspecialchars($Wcms->stripTags($tag)); ?></span></h3>
+            <a href="<?php echo $Wcms->url('?page=simplefeed'); ?>" class="sf-clear-filter">Clear filter</a>
         </div>
     <?php endif; ?>
     
@@ -99,13 +99,13 @@ $filtered = isset($tag)
         
         <div class="sf-feed-navigation">
             <?php if ($shown < count($filtered)): ?>
-                <a href="<?php echo $Wcms->url('?page=simplefeed' . (isset($tag) ? '&action=tag&tag=' . urlencode($tag) : '') . '&shown=' . ($shown + $config['show_more_limit'])); ?>" class="sf-button sf-show-more">
+                <a href="<?php echo $Wcms->url('?page=simplefeed' . (isset($tag) ? '&action=tag&tag=' . urlencode($tag) : '') . '&shown=' . ($shown + $config['show_more_limit'])); ?>" class="sf-btn sf-show-more">
                     Show more posts
                 </a>
             <?php endif; ?>
             
             <?php if (count($posts) > $config['show_more_limit']): ?>
-                <a href="<?php echo $Wcms->url('?page=simplefeed&action=archive'); ?>" class="sf-button sf-archive-link">
+                <a href="<?php echo $Wcms->url('?page=simplefeed&action=archive'); ?>" class="sf-btn sf-archive-link">
                     View full archive
                 </a>
             <?php endif; ?>
