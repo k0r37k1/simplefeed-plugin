@@ -20,7 +20,7 @@ krsort($postsByYear);
     <h2>Post Archive</h2>
 
     <?php if (isset($_SESSION['feedbackMessage'])): ?>
-        <div class="sf-feedback-message <?php echo htmlspecialchars($_SESSION['feedbackType'] ?? 'success'); ?>">
+        <div class="sf-alert sf-alert-<?php echo htmlspecialchars($_SESSION['feedbackType'] ?? 'success'); ?>">
             <?php echo $_SESSION['feedbackMessage']; ?>
         </div>
         <?php unset($_SESSION['feedbackMessage'], $_SESSION['feedbackType']); ?>
@@ -65,7 +65,7 @@ krsort($postsByYear);
     <?php endif; ?>
 
     <div class="sf-archive-footer">
-        <a href="<?php echo $Wcms->url('?page=simplefeed'); ?>" class="sf-button sf-back-to-feed">
+        <a href="<?php echo $Wcms->url('?page=simplefeed'); ?>" class="sf-btn sf-back-to-feed">
             ← Back to Feed
         </a>
     </div>
