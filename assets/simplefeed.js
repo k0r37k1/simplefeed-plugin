@@ -43,11 +43,11 @@ function setupFormValidation() {
             let isValid = true;
 
             // Clear previous errors
-            form.querySelectorAll('.field-error').forEach(el => el.remove());
+            form.querySelectorAll('.sf-field-error').forEach(el => el.remove());
             
             // Reset border colors
             form.querySelectorAll('input, textarea').forEach(el => {
-                el.style.borderColor = '';
+                el.classList.remove('sf-error');
             });
 
             // Validate title
@@ -72,7 +72,7 @@ function setupFormValidation() {
             if (!isValid) {
                 e.preventDefault();
                 // Scroll to the first error
-                const firstError = form.querySelector('.field-error');
+                const firstError = form.querySelector('.sf-field-error');
                 if (firstError) {
                     firstError.scrollIntoView({ behavior: 'smooth', block: 'center' });
                 }
@@ -189,7 +189,7 @@ function setupImagePreviews() {
     if (imageInput) {
         // Create image preview element
         const previewContainer = document.createElement('div');
-        previewContainer.className = 'image-preview';
+        previewContainer.className = 'sf-image-preview';
         previewContainer.style.marginTop = '10px';
         previewContainer.style.display = 'none';
 
@@ -228,7 +228,7 @@ function setupImagePreviews() {
 function setupDeleteConfirmation() {
     // Using event delegation for delete confirmations
     document.body.addEventListener('click', function(e) {
-        if (e.target && e.target.classList.contains('btn-delete')) {
+        if (e.target && e.target.classList.contains('sf-btn-danger')) {
             if (!confirm('Are you sure you want to delete this? This action cannot be undone.')) {
                 e.preventDefault();
             }
@@ -247,13 +247,10 @@ function setupDeleteConfirmation() {
  */
 function addErrorMessage(field, message) {
     const errorDiv = document.createElement('div');
-    errorDiv.className = 'field-error';
-    errorDiv.style.color = '#d9534f';
-    errorDiv.style.fontSize = '12px';
-    errorDiv.style.marginTop = '5px';
+    errorDiv.className = 'sf-field-error';
     errorDiv.textContent = message;
 
-    field.style.borderColor = '#d9534f';
+    field.classList.add('sf-error');
     field.parentNode.appendChild(errorDiv);
 }
 
@@ -291,7 +288,7 @@ function escapeHTML(str) {
  */
 function setupFeedbackDismissal() {
     // Auto-dismiss feedback messages after 5 seconds
-    const feedbackMessages = document.querySelectorAll('.sf-feedback-message');
+    const feedbackMessages = document.querySelectorAll('.sf-alert');
     if (feedbackMessages.length) {
         setTimeout(() => {
             feedbackMessages.forEach(el => {
