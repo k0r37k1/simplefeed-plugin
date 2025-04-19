@@ -77,8 +77,8 @@ foreach ($posts as $i => $p) {
             <?php if ($prev): ?>
                 <div class="sf-post-prev">
                     <a href="<?php echo $Wcms->url('?page=simplefeed&action=post&slug=' . urlencode($prev['slug'])); ?>">
-                        <span class="nav-arrow">←</span>
-                        <span class="nav-title"><?php echo htmlspecialchars($Wcms->stripTags($prev['title'])); ?></span>
+                        <span class="sf-nav-arrow">←</span>
+                        <span class="sf-nav-title"><?php echo htmlspecialchars($Wcms->stripTags($prev['title'])); ?></span>
                     </a>
                 </div>
             <?php endif; ?>
@@ -86,15 +86,15 @@ foreach ($posts as $i => $p) {
             <?php if ($next): ?>
                 <div class="sf-post-next">
                     <a href="<?php echo $Wcms->url('?page=simplefeed&action=post&slug=' . urlencode($next['slug'])); ?>">
-                        <span class="nav-title"><?php echo htmlspecialchars($Wcms->stripTags($next['title'])); ?></span>
-                        <span class="nav-arrow">→</span>
+                        <span class="sf-nav-title"><?php echo htmlspecialchars($Wcms->stripTags($next['title'])); ?></span>
+                        <span class="sf-nav-arrow">→</span>
                     </a>
                 </div>
             <?php endif; ?>
         </div>
 
         <div class="sf-back-to-feed">
-            <a href="<?php echo $Wcms->url('?page=simplefeed'); ?>">Back to Feed</a>
+            <a href="<?php echo $Wcms->url('?page=simplefeed'); ?>" class="sf-btn">Back to Feed</a>
         </div>
     </footer>
 </article>
