@@ -93,7 +93,7 @@ if (!empty($query)) {
     <?php endif; ?>
     
     <div class="sf-back-to-feed">
-        <a href="<?php echo $Wcms->url('?page=simplefeed'); ?>" class="sf-button">
+        <a href="<?php echo $Wcms->url('?page=simplefeed'); ?>" class="sf-btn">
             ← Back to Feed
         </a>
     </div>
