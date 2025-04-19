@@ -17,48 +17,48 @@ $config = sf_getConfig();
         <!-- Use WonderCMS token -->
         <input type="hidden" name="token" value="<?php echo $Wcms->getToken(); ?>">
 
-        <div class="form-group">
+        <div class="sf-form-group">
             <label for="date_format">Date Format:</label>
-            <input type="text" id="date_format" name="date_format" value="<?php echo $Wcms->stripTags($config['date_format']); ?>">
-            <div class="help">PHP date format, e.g., d.m.Y for 31.12.2025</div>
+            <input type="text" id="date_format" name="date_format" class="sf-form-control" value="<?php echo $Wcms->stripTags($config['date_format']); ?>">
+            <div class="sf-help">PHP date format, e.g., d.m.Y for 31.12.2025</div>
         </div>
 
-        <div class="form-group">
+        <div class="sf-form-group">
             <label for="show_more_limit">Show More Limit:</label>
-            <input type="number" id="show_more_limit" name="show_more_limit" value="<?php echo (int)$config['show_more_limit']; ?>" min="1" max="50">
-            <div class="help">Number of posts to show before "Show more" button</div>
+            <input type="number" id="show_more_limit" name="show_more_limit" class="sf-form-control" value="<?php echo (int)$config['show_more_limit']; ?>" min="1" max="50">
+            <div class="sf-help">Number of posts to show before "Show more" button</div>
         </div>
 
-        <div class="form-group">
+        <div class="sf-form-group">
             <label for="use_thumbnails">Use Thumbnails:</label>
-            <select id="use_thumbnails" name="use_thumbnails">
+            <select id="use_thumbnails" name="use_thumbnails" class="sf-form-control">
                 <option value="1" <?php echo $config['use_thumbnails'] ? 'selected' : ''; ?>>Yes</option>
                 <option value="0" <?php echo !$config['use_thumbnails'] ? 'selected' : ''; ?>>No</option>
             </select>
-            <div class="help">Show image thumbnails in post lists</div>
+            <div class="sf-help">Show image thumbnails in post lists</div>
         </div>
 
-        <div class="form-group">
+        <div class="sf-form-group">
             <label for="default_markdown">Default to Markdown:</label>
-            <select id="default_markdown" name="default_markdown">
+            <select id="default_markdown" name="default_markdown" class="sf-form-control">
                 <option value="1" <?php echo ($config['default_markdown'] ?? true) ? 'selected' : ''; ?>>Yes</option>
                 <option value="0" <?php echo isset($config['default_markdown']) && !$config['default_markdown'] ? 'selected' : ''; ?>>No</option>
             </select>
-            <div class="help">Use Markdown as default format for new posts</div>
+            <div class="sf-help">Use Markdown as default format for new posts</div>
         </div>
 
-        <div class="form-actions">
-            <button type="submit" class="btn-primary">Save Settings</button>
+        <div class="sf-form-actions">
+            <button type="submit" class="sf-btn sf-btn-primary">Save Settings</button>
         </div>
     </form>
 
-    <div class="admin-links">
+    <div class="sf-admin-links">
         <h3>Management</h3>
-        <a href="?page=simplefeed&action=list" class="btn-secondary">View all posts</a>
-        <a href="?page=simplefeed&action=edit" class="btn-secondary">Create new post</a>
+        <a href="?page=simplefeed&action=list" class="sf-btn sf-btn-secondary">View all posts</a>
+        <a href="?page=simplefeed&action=edit" class="sf-btn sf-btn-secondary">Create new post</a>
     </div>
 
-    <div class="markdown-info">
+    <div class="sf-markdown-info">
         <h3>Markdown Support</h3>
         <p>SimpleFeed supports Markdown formatting for your posts. You can enable or disable Markdown individually for each post when editing.</p>
         <p>Benefits of using Markdown:</p>
